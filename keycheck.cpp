@@ -63,30 +63,8 @@ class KeyCheck : public IOSet{
             if(GetKeyState('X') & 0x8000) keyPressed.push_back("x");
             if(GetKeyState('Y') & 0x8000) keyPressed.push_back("y");
             if(GetKeyState('Z') & 0x8000) keyPressed.push_back("z");
-            if(!keyPressed.empty()){
-                if(!std::equal(keyPressed.begin(), keyPressed.end(), keyFlag.begin(), keyFlag.end())){
-                    newKey.clear();
-                    std::set_difference(keyPressed.begin(), keyPressed.end(), keyFlag.begin(), keyFlag.end(), std::back_inserter(newKey));
-                    keyFlag.clear();
-                    std::copy(keyPressed.begin(), keyPressed.end(), std::back_inserter(keyFlag));
-                    if(!newKey.empty()){
-                        std::copy(newKey.begin(), newKey.end(), std::back_inserter(keyState));
-                        return keyState;
-                    }
-                    else{
-                        keyAns.clear();
-                        keyAns.push_back("RELEASE");
-                        keyFlag.clear();
-                        return keyAns;
-                    }
-                }
-                else{
-                    keyAns.clear();
-                    keyAns.push_back("EQ");
-                    return keyAns;
-                }
-            }
-            else{
+            
+            if(keyPressed.empty()){
                 flag = 0;
                 keyAns.clear();
                 keyAns.push_back("RELEASE");
@@ -94,33 +72,58 @@ class KeyCheck : public IOSet{
                 keyFlag.clear();
                 return keyAns;
             }
+            else{
+                if(std::equal(keyPressed.begin(), keyPressed.end(), keyFlag.begin(), keyFlag.end())){
+                    keyAns.clear();
+                    keyAns.push_back("EQ");
+                    return keyAns;
+                }
+                else{
+                    newKey.clear();
+                    std::set_difference(keyPressed.begin(), keyPressed.end(), keyFlag.begin(), keyFlag.end(), std::back_inserter(newKey));
+                    keyFlag.clear();
+                    std::copy(keyPressed.begin(), keyPressed.end(), std::back_inserter(keyFlag));
+                    if(newKey.empty()){
+                        keyAns.clear();
+                        keyAns.push_back("RELEASE");
+                        keyFlag.clear();
+                        return keyAns;
+                    }
+                    else{
+                        std::copy(newKey.begin(), newKey.end(), std::back_inserter(keyState));
+                        return keyState;
+                    }
+                }
+            }
         }
-        int key_sc_data_read(std::string file_name){
+
+        int key_sc_data_read(std::string fileName){
             keyScFileDataLine.clear();
-            if(read_file(file_name) == "FALSE"){
+            if(read_file(fileName) == "FALSE"){
                 return false;
             }
             else{
                 str keyScFileData;
-                keyScFileData = read_file(file_name);
+                keyScFileData = read_file(fileName);
                 keyScFileDataLine = keyScFileData.split("\n");
-                int scfile_l = keyScFileDataLine.size();
+                int scFileLineSize = keyScFileDataLine.size();
                 scKey.clear();
                 scFunc.clear();
-                for (int i = 0; i < scfile_l; i++){
+                for (int i = 0; i < scFileLineSize; i++){
                     if (std::count(keyScFileDataLine[i].begin(), keyScFileDataLine[i].end(), '=') > 0){
                         str scData;
                         scData = keyScFileDataLine[i];
-                        std::vector<std::string> scfile_line = scData.split("=");
-                        scKey.push_back(scfile_line[0]);
-                        scFunc.push_back(scfile_line[1]);
+                        std::vector<std::string> scFileLine = scData.split("=");
+                        scKey.push_back(scFileLine[0]);
+                        scFunc.push_back(scFileLine[1]);
                     }
                     
                 }
                 return true;
             }
         }
-        void key_func(std::vector<std::string> key_combination){
+
+        void key_func(std::vector<std::string> keyCombination){
             int registNum = scKey.size(), keyNum, registKeyNum;
             std::vector<std::string> registKeyCombination;
             for(int i = 0; i < registNum; i++){
@@ -128,11 +131,11 @@ class KeyCheck : public IOSet{
                 str scKeyData;
                 scKeyData = scKey[i];
                 registKeyCombination = scKeyData.split(",");
-                keyNum = key_combination.size(); //押されているキーの数
+                keyNum = keyCombination.size(); //押されているキーの数
                 registKeyNum = registKeyCombination.size();
                 if (registKeyNum < keyNum){
                     for(int j = 0; j < keyNum; j++){
-                        if(std::find(registKeyCombination.begin(), registKeyCombination.end(), key_combination[j]) >= registKeyCombination.end()){
+                        if(std::find(registKeyCombination.begin(), registKeyCombination.end(), keyCombination[j]) >= registKeyCombination.end()){
                             flag = 1;
                         }
                     }
@@ -354,13 +357,11 @@ void finish(tray_menu *){
 
 void key_sc_set(tray_menu *){
     IOSet io;
-    io.title("設定ファイル");
     io.create_process_cmd("notepad " + io.dir() +"/keysc.ini");
 }
 
 void help(tray_menu *){
     IOSet io;
-    io.title("ヘルプ");
     io.create_process_cmd(io.dir()+"/help");
 }
 
