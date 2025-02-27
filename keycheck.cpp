@@ -2,7 +2,6 @@
 
 class KeyCheck : public IOSet{
     private:
-        int flag;
         std::vector<int> keyList{
             VK_LSHIFT,VK_RSHIFT,VK_LCONTROL,VK_RCONTROL,VK_LMENU,VK_RMENU,VK_SPACE,VK_LWIN,VK_RWIN,VK_UP,VK_DOWN,VK_LEFT,VK_RIGHT,VK_RETURN,VK_ESCAPE,VK_LBUTTON,VK_RBUTTON,
             '1','2','3','4','5','6','7','8','9','0','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'
@@ -14,6 +13,7 @@ class KeyCheck : public IOSet{
         };
 
         std::vector<std::string> keyPressed, keyState, keyAns, keyFlag, newKey, keyScFileDataLine, scKey, scFunc;
+        int cmdFlag = 0;
 
     public:
         KeyCheck(std::string title) : IOSet(title){};
@@ -29,11 +29,11 @@ class KeyCheck : public IOSet{
             this->key_state_check();
             
             if(this->keyPressed.empty()){ // キーが押されていない場合
-                this->flag = 0;
                 this->keyAns.clear();
                 this->keyAns.push_back("RELEASE");
                 this->keyState.clear();
                 this->keyFlag.clear();
+                this->cmdFlag = 0;
                 return this->keyAns;
             }
             else{
@@ -44,7 +44,11 @@ class KeyCheck : public IOSet{
                 }
                 else{
                     this->newKey.clear();
-                    std::set_difference(this->keyPressed.begin(), this->keyPressed.end(), this->keyFlag.begin(), this->keyFlag.end(), std::back_inserter(this->newKey));
+                    std::set_difference(
+                        this->keyPressed.begin(), this->keyPressed.end(), 
+                        this->keyFlag.begin(), this->keyFlag.end(), 
+                        std::back_inserter(this->newKey)
+                    );
                     this->keyFlag.clear();
                     std::copy(this->keyPressed.begin(), this->keyPressed.end(), std::back_inserter(this->keyFlag));
                     if(this->newKey.empty()){
@@ -68,9 +72,9 @@ class KeyCheck : public IOSet{
             }
             else{
                 str keyScFileData;
-                keyScFileData = read_file(fileName);
-                this->keyScFileDataLine = keyScFileData.split("\n");
-                int scFileLineSize = this->keyScFileDataLine.size();
+                keyScFileData               = read_file(fileName);
+                this->keyScFileDataLine     = keyScFileData.split("\n");
+                int scFileLineSize          = this->keyScFileDataLine.size();
                 this->scKey.clear();
                 this->scFunc.clear();
                 for (int i = 0; i < scFileLineSize; i++){
@@ -91,28 +95,37 @@ class KeyCheck : public IOSet{
             int registNum = this->scKey.size(), keyNum, registKeyNum;
             std::vector<std::string> registKeyCombination;
             for(int i = 0; i < registNum; i++){
-                flag = 0;
+                int flag                = 0;
                 str scKeyData;
-                scKeyData = this->scKey[i];
-                registKeyCombination = scKeyData.split(",");
-                keyNum = keyCombination.size(); //押されているキーの数
-                registKeyNum = registKeyCombination.size();
-                if (registKeyNum < keyNum){
-                    for(int j = 0; j < keyNum; j++){
-                        if(std::find(registKeyCombination.begin(), registKeyCombination.end(), keyCombination[j]) >= registKeyCombination.end()){
-                            flag = 1;
-                        }
-                    }
-                    if (flag == 0){
-                        std::string command;
-                        command = this->scFunc[i];
-                        //std::async(std::launch::async, system, command.c_str());
-                        this->create_process_cmd(command);
+                scKeyData               = this->scKey[i];
+                registKeyCombination    = scKeyData.split(",");
+                keyNum                  = keyCombination.size();            //押されているキーの数
+                registKeyNum            = registKeyCombination.size();      //ショートカットのキーの数
+                
+                for(int j = 0; j < keyNum; j++){
+                    if(std::find(registKeyCombination.begin(), registKeyCombination.end(), keyCombination[j]) >= registKeyCombination.end()){
                         flag = 1;
-                        Sleep(10);
                         break;
                     }
                 }
+
+                for(int j = 0; j < registKeyNum; j++){
+                    if(std::find(keyCombination.begin(), keyCombination.end(), registKeyCombination[j]) >= keyCombination.end()){
+                        flag = 1;
+                        break;
+                    }
+                }
+                if (flag == 0 && this->cmdFlag == 0){
+                    std::string command;
+                    command = this->scFunc[i];
+                    this->print(command);
+                    //std::async(std::launch::async, system, command.c_str());
+                    this->create_process_cmd(command);
+                    this->cmdFlag = 1;
+                    Sleep(10);
+                    break;
+                }
+                
             }
         }
 };
