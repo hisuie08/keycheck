@@ -47,7 +47,7 @@ class str : public std::string{
             int i = 0;
             std::string stringText = *this;
             std::vector<std::string> result;
-            std::vector<int> subStrNum = find_all(del);
+            std::vector<int> subStrNum = this->find_all(del);
             while (first < stringText.size()) {
                 std::string subStr(stringText, first, subStrNum[i] - first);
                 result.push_back(subStr); //”z—ñ‚Ì––”ö‚É—v‘f‚ð’Ç‰Á‚·‚é
@@ -74,7 +74,7 @@ class str : public std::string{
 
         str& operator+(const str &targetText) {
             str strText = targetText;
-            for(const auto& s : strText){
+            for(auto& s : strText){
                 this -> push_back(s);
             }
             return *this;
@@ -83,7 +83,7 @@ class str : public std::string{
         str& operator= (std::string target){
             std::string targetString = target;
             this -> clear();
-            for(const auto& s : targetString){
+            for(auto& s : targetString){
                 this -> push_back(s);
             }
             return *this;
@@ -97,7 +97,7 @@ class vec : public std::vector<std::string>{
         std::string to_str (){
             std::string ans = "";
             std::vector<std::string> sourceVec = *this;
-            for(const auto& s : sourceVec){
+            for(std::string& s : sourceVec){
                 ans = ans + s;
             }
             return ans;
@@ -117,8 +117,7 @@ class vec : public std::vector<std::string>{
         vec& operator= (std::vector<std::string> target){
             std::vector<std::string> targetVec = target;
             this -> clear();
-            //std::vector<std::string> ().swap(this);
-            for(const auto& v : targetVec){
+            for(std::string& v : targetVec){
                 this -> push_back(v);
             }
             return *this;
@@ -126,8 +125,7 @@ class vec : public std::vector<std::string>{
 
         vec& operator= (std::vector<int> targetVec){
             this -> clear();
-            //std::vector<std::string> ().swap(this);
-            for(const auto& v : targetVec){
+            for(int& v : targetVec){
                 this -> push_back(std::to_string(v));
             }
             return *this;
@@ -135,8 +133,7 @@ class vec : public std::vector<std::string>{
 
         vec& operator= (std::vector<double> targetVec){
             this -> clear();
-            //std::vector<std::string> ().swap(this);
-            for(const auto& v : targetVec){
+            for(double& v : targetVec){
                 this -> push_back(std::to_string(v));
             }
             return *this;

@@ -35,6 +35,18 @@ class KeyCheck : public IOSet{
             {VK_F10,         "F10"},
             {VK_F11,         "F11"},
             {VK_F12,         "F12"},
+            {VK_F13,         "F13"},
+            {VK_F14,         "F14"},
+            {VK_F15,         "F15"},
+            {VK_F16,         "F16"},
+            {VK_F17,         "F17"},
+            {VK_F18,         "F18"},
+            {VK_F19,         "F19"},
+            {VK_F20,         "F20"},
+            {VK_F21,         "F21"},
+            {VK_F22,         "F22"},
+            {VK_F23,         "F23"},
+            {VK_F24,         "F24"},
             {'1',   "1"},
             {'2',   "2"},
             {'3',   "3"},
@@ -91,8 +103,7 @@ class KeyCheck : public IOSet{
         
         int key_state_check(void){
             this->keyPressed.clear();
-            std::vector<std::string> ().swap(this->keyPressed);
-            for(const auto& [key, value] : this->keyList){
+            for(auto& [key, value] : this->keyList){
                 if (GetKeyState(key) & 0x8000) this->keyPressed.push_back(value);
             }
             return 0;
@@ -104,7 +115,6 @@ class KeyCheck : public IOSet{
             if(this->keyPressed.empty()){ // ƒL[‚ª‰Ÿ‚³‚ê‚Ä‚¢‚È‚¢ê‡
                 this->keyState = "RELEASE";
                 this->keyFlag.clear();
-                std::vector<std::string> ().swap(this->keyFlag);
                 return this->keyState;
             }
             else{
@@ -117,7 +127,6 @@ class KeyCheck : public IOSet{
                 }
                 else{
                     this->newKey.clear();
-                    std::vector<std::string> ().swap(this->newKey);
                     std::set_difference( // ·W‡
                         this->keyPressed.begin(), this->keyPressed.end(), 
                         this->keyFlag.begin(), this->keyFlag.end(), 
@@ -127,12 +136,10 @@ class KeyCheck : public IOSet{
                     if(this->newKey.empty()){
                         this->keyState = "RELEASE";
                         this->keyFlag.clear();
-                        std::vector<std::string> ().swap(this->keyFlag);
                         return this->keyState;
                     }
                     else{
                         this->keyFlag.clear();
-                        std::vector<std::string> ().swap(this->keyFlag);
                         std::copy(this->keyPressed.begin(), this->keyPressed.end(), std::back_inserter(this->keyFlag));
                         this->keyState = "NEWKEY";
                         return this->keyState;
@@ -152,9 +159,8 @@ class KeyCheck : public IOSet{
                 shortcutFileData                = read_file(this->shortcutFileName);
                 fileDataLine                    = shortcutFileData.split("\n");
                 this->shortcutList.clear();
-                std::vector<ShortcutConfig> ().swap(this->shortcutList);
                 
-                for(const auto& l : fileDataLine){
+                for(std::string &l : fileDataLine){
                     if (std::count(l.begin(), l.end(), '=') > 0){
                         std::vector<std::string> shortcutFileLine;
                         str shortcutData, shortcutKeyData;
@@ -175,7 +181,7 @@ class KeyCheck : public IOSet{
             if (this->keyState != "NEWKEY"){
                 return 2;
             }
-            for(const auto& l : this->shortcutList){
+            for(ShortcutConfig &l : this->shortcutList){
                 registKeyCombination        = l.key;
                 if (registKeyCombination.vec_compare(this->keyPressed)){
                     //this->print(l.func);
