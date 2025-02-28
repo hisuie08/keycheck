@@ -187,7 +187,7 @@ class KeyCheck : public IOSet{
                     //this->print(l.func);
                     //std::async(std::launch::async, system, l.func.c_str());
                     this->create_process_cmd(l.func);
-                    Sleep(10);
+                    Sleep(100);
                     return 1;
                 }
             }
@@ -239,7 +239,7 @@ tray tray_form ={               // タスクトレイの設定
 void key_check(void){
     while(process){
         keycheck.main();
-        Sleep(10);
+        Sleep(100);
     }
 }
 
