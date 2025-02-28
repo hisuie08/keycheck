@@ -104,9 +104,19 @@ class vec : public std::vector<std::string>{
         std::vector<std::string> to_vec (){
             return (std::vector<std::string>)*this;
         }
+
+        int vec_compare(std::vector<std::string> target){
+            std::vector<std::string> targetVec = target;
+            std::vector<std::string> sourceVec = *this;
+            std::sort(targetVec.begin(), targetVec.end());
+            std::sort(sourceVec.begin(), sourceVec.end());
+            return std::equal(targetVec.begin(), targetVec.end(), sourceVec.begin(), sourceVec.end());
+        }
+
         vec& operator= (std::vector<std::string> target){
             std::vector<std::string> targetVec = target;
             this -> clear();
+            //std::vector<std::string> ().swap(this);
             for(int i = 0; i < targetVec.size(); i++){
                 this -> push_back(targetVec[i]);
             }
@@ -115,6 +125,7 @@ class vec : public std::vector<std::string>{
 
         vec& operator= (std::vector<int> targetVec){
             this -> clear();
+            //std::vector<std::string> ().swap(this);
             for(int i = 0; i < targetVec.size(); i++){
                 this -> push_back(std::to_string(targetVec[i]));
             }
@@ -123,6 +134,7 @@ class vec : public std::vector<std::string>{
 
         vec& operator= (std::vector<double> targetVec){
             this -> clear();
+            //std::vector<std::string> ().swap(this);
             for(int i = 0; i < targetVec.size(); i++){
                 this -> push_back(std::to_string(targetVec[i]));
             }
