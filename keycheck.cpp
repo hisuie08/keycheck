@@ -1,27 +1,88 @@
 #include "ioset.hpp"
 
 class KeyCheck : public IOSet{
-    private:
-        std::vector<int> keyList{
-            VK_LSHIFT,VK_RSHIFT,VK_LCONTROL,VK_RCONTROL,VK_LMENU,VK_RMENU,VK_SPACE,VK_LWIN,VK_RWIN,VK_UP,VK_DOWN,VK_LEFT,VK_RIGHT,VK_RETURN,VK_ESCAPE,VK_LBUTTON,VK_RBUTTON,
-            '1','2','3','4','5','6','7','8','9','0','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'
+    protected:
+        struct KeyConfig{
+            int key;
+            std::string value;
         };
 
-        std::vector<std::string> keyVal{
-            "LSHIFT","RSHIFT","LCTRL","RCTRL","LALT","RALT","SPACE","LWIN","RWIN","UP","DOWN","LEFT","RIGHT","ENTER","ESC","LCLICK","RCLICK",
-            "1","2","3","4","5","6","7","8","9","0","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"
+        std::vector<KeyConfig> keyList{
+            {VK_LSHIFT,     "LSHIFT"},
+            {VK_RSHIFT,     "RSHIFT"},
+            {VK_LCONTROL,   "LCTRL"},
+            {VK_RCONTROL,   "RCTRL"},
+            {VK_LMENU,      "LALT"},
+            {VK_RMENU,      "RALT"},
+            {VK_SPACE,      "SPACE"},
+            {VK_LWIN,       "LWIN"},
+            {VK_RWIN,       "RWIN"},
+            {VK_UP,         "UP"},
+            {VK_DOWN,       "DOWN"},
+            {VK_LEFT,       "LEFT"},
+            {VK_RIGHT,      "RIGHT"},
+            {VK_RETURN,     "ENTER"},
+            {VK_ESCAPE,     "ESC"},
+            {VK_LBUTTON,    "LCLICK"},
+            {VK_RBUTTON,    "RCLICK"},
+            {VK_HOME,       "HOME"},
+            {'1',   "1"},
+            {'2',   "2"},
+            {'3',   "3"},
+            {'4',   "4"},
+            {'5',   "5"},
+            {'6',   "6"},
+            {'7',   "7"},
+            {'8',   "8"},
+            {'9',   "9"},
+            {'0',   "0"},
+            {'A',   "a"},
+            {'B',   "b"},
+            {'C',   "c"},
+            {'D',   "d"},
+            {'E',   "e"},
+            {'F',   "f"},
+            {'G',   "g"},
+            {'H',   "h"},
+            {'I',   "i"},
+            {'J',   "j"},
+            {'K',   "k"},
+            {'L',   "l"},
+            {'M',   "m"},
+            {'N',   "n"},
+            {'O',   "o"},
+            {'P',   "p"},
+            {'Q',   "q"},
+            {'R',   "r"},
+            {'S',   "s"},
+            {'T',   "t"},
+            {'U',   "u"},
+            {'V',   "v"},
+            {'W',   "w"},
+            {'X',   "x"},
+            {'Y',   "y"},
+            {'Z',   "z"}
         };
 
-        std::vector<std::string> keyPressed, keyFlag, newKey, keyScFileDataLine, scKey, scFunc;
+        struct ShortcutConfig{
+            std::vector<std::string> key;
+            std::string func;
+        };
+
+        std::vector<ShortcutConfig> shortcutList;
+
+        std::vector<std::string> keyPressed, keyFlag, newKey;
         std::string keyState;
 
     public:
-        KeyCheck(std::string title) : IOSet(title){};
+        KeyCheck(std::string title, std::string fileName) : IOSet(title){
+            this->shortcut_data_read(fileName);
+        };
         
         void key_state_check(void){
             this->keyPressed.clear();
             for(int i = 0; i < this->keyList.size(); i++){
-                if (GetKeyState(this->keyList[i]) & 0x8000) this->keyPressed.push_back(this->keyVal[i]);
+                if (GetKeyState(this->keyList[i].key) & 0x8000) this->keyPressed.push_back(this->keyList[i].value);
             }
         }
 
@@ -61,25 +122,28 @@ class KeyCheck : public IOSet{
             }
         }
 
-        int key_sc_data_read(std::string fileName){
-            this->keyScFileDataLine.clear();
+        int shortcut_data_read(std::string fileName){
             if(read_file(fileName) == "FALSE"){
                 return false;
             }
             else{
-                str keyScFileData;
-                keyScFileData               = read_file(fileName);
-                this->keyScFileDataLine     = keyScFileData.split("\n");
-                int scFileLineSize          = this->keyScFileDataLine.size();
-                this->scKey.clear();
-                this->scFunc.clear();
-                for (int i = 0; i < scFileLineSize; i++){
-                    if (std::count(this->keyScFileDataLine[i].begin(), this->keyScFileDataLine[i].end(), '=') > 0){
-                        str scData;
-                        scData = this->keyScFileDataLine[i];
-                        std::vector<std::string> scFileLine = scData.split("=");
-                        this->scKey.push_back(scFileLine[0]);
-                        this->scFunc.push_back(scFileLine[1]);
+                str shortcutFileData;
+                std::vector<std::string> fileDataLine;
+                ShortcutConfig shortcutConfig;
+                shortcutFileData                = read_file(fileName);
+                fileDataLine                    = shortcutFileData.split("\n");
+                int fileLineNum                 = fileDataLine.size();
+                this->shortcutList.clear();
+                for (int i = 0; i < fileLineNum; i++){
+                    if (std::count(fileDataLine[i].begin(), fileDataLine[i].end(), '=') > 0){
+                        std::vector<std::string> shortcutFileLine;
+                        str shortcutData, shortcutKeyData;
+                        shortcutData                = fileDataLine[i];
+                        shortcutFileLine            = shortcutData.split("=");
+                        shortcutKeyData             = shortcutFileLine[0];
+                        shortcutConfig.key          = shortcutKeyData.split(",");
+                        shortcutConfig.func         = shortcutFileLine[1];
+                        this->shortcutList.push_back(shortcutConfig);
                     }
                     
                 }
@@ -88,16 +152,14 @@ class KeyCheck : public IOSet{
         }
 
         void key_func(void){
-            int registNum = this->scKey.size(), keyNum, registKeyNum, flag;
+            int registNum = this->shortcutList.size(), keyNum, registKeyNum, flag;
             std::vector<std::string> registKeyCombination;
             if (this->keyState != "NEWKEY"){
                 return;
             }
             for(int i = 0; i < registNum; i++){
-                flag                = 0;
-                str scKeyData;
-                scKeyData               = this->scKey[i];
-                registKeyCombination    = scKeyData.split(",");
+                flag                    = 0;
+                registKeyCombination    = this->shortcutList[i].key;
                 keyNum                  = this->keyPressed.size();              //押されているキーの数
                 registKeyNum            = registKeyCombination.size();          //ショートカットのキーの数
                 
@@ -116,7 +178,7 @@ class KeyCheck : public IOSet{
                 }
                 if (flag == 0){
                     std::string command;
-                    command = this->scFunc[i];
+                    command = this->shortcutList[i].func;
                     this->print(command);
                     //std::async(std::launch::async, system, command.c_str());
                     this->create_process_cmd(command);
@@ -133,26 +195,32 @@ class KeyCheck : public IOSet{
         }
 };
 
+IOSet io("");
+KeyCheck keycheck("Keyboard Shortcut", io.pwd() + "\\keysc.ini");
+
 TaskTray taskTray("KeyCheck");
 int process = true;
 void finish(tray_menu *){
     process=false;
     taskTray.tray_exit();  // タスクトレイから削除
 }
-void key_sc_set(tray_menu *){
-    IOSet io("");
+void shortcut_setting(tray_menu *){
     io.create_process_cmd("notepad " + io.pwd() +"\\keysc.ini");
 }
 
+void shortcut_update(tray_menu *){
+    keycheck.shortcut_data_read(io.pwd() + "\\keysc.ini");
+}
+
 void help(tray_menu *){
-    IOSet io("");
     io.create_process_cmd("explorer " + io.pwd()+"\\README.md");
 }
 
 tray tray_form ={               // タスクトレイの設定
     (char*)"icon.ico", // タスクトレイのアイコン画像。別途用意しておく。
     (tray_menu[]){
-        {(char*)"Settings",0,0,key_sc_set},
+        {(char*)"Settings",0,0,shortcut_setting},
+        {(char*)"Update",0,0,shortcut_update},
         {(char*)"-"},                 // セパレータ
         {(char*)"Quit",0,0,finish},   //終了
         {(char*)"-"},
@@ -163,9 +231,7 @@ tray tray_form ={               // タスクトレイの設定
 
 //キーの取得
 void key_check(void){
-    KeyCheck keycheck("Keyboard Shortcut");
     while(process){
-        keycheck.key_sc_data_read(keycheck.pwd() + "\\keysc.ini");
         keycheck.main();
         Sleep(10);
     }
