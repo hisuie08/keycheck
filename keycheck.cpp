@@ -98,8 +98,8 @@ class KeyCheck : public IOSet{
                 str scKeyData;
                 scKeyData               = this->scKey[i];
                 registKeyCombination    = scKeyData.split(",");
-                keyNum                  = this->keyPressed.size();            //押されているキーの数
-                registKeyNum            = registKeyCombination.size();      //ショートカットのキーの数
+                keyNum                  = this->keyPressed.size();              //押されているキーの数
+                registKeyNum            = registKeyCombination.size();          //ショートカットのキーの数
                 
                 for(int j = 0; j < keyNum; j++){
                     if(std::find(registKeyCombination.begin(), registKeyCombination.end(), this->keyPressed[j]) >= registKeyCombination.end()){
