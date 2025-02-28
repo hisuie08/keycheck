@@ -2,12 +2,7 @@
 
 class KeyCheck : public IOSet{
     protected:
-        struct KeyConfig{
-            int key;
-            std::string value;
-        };
-
-        std::vector<KeyConfig> keyList{
+        std::unordered_map <int, std::string> keyList{ //連想配列を使える
             {VK_LSHIFT,     "LSHIFT"},
             {VK_RSHIFT,     "RSHIFT"},
             {VK_LCONTROL,   "LCTRL"},
@@ -97,8 +92,8 @@ class KeyCheck : public IOSet{
         int key_state_check(void){
             this->keyPressed.clear();
             std::vector<std::string> ().swap(this->keyPressed);
-            for(int i = 0; i < this->keyList.size(); i++){
-                if (GetKeyState(this->keyList[i].key) & 0x8000) this->keyPressed.push_back(this->keyList[i].value);
+            for(const auto& [key, value] : this->keyList){
+                if (GetKeyState(key) & 0x8000) this->keyPressed.push_back(value);
             }
             return 0;
         }
@@ -156,44 +151,36 @@ class KeyCheck : public IOSet{
                 ShortcutConfig shortcutConfig;
                 shortcutFileData                = read_file(this->shortcutFileName);
                 fileDataLine                    = shortcutFileData.split("\n");
-                int fileLineNum                 = fileDataLine.size();
                 this->shortcutList.clear();
                 std::vector<ShortcutConfig> ().swap(this->shortcutList);
                 
-                for (int i = 0; i < fileLineNum; i++){
-                    if (std::count(fileDataLine[i].begin(), fileDataLine[i].end(), '=') > 0){
+                for(const auto& l : fileDataLine){
+                    if (std::count(l.begin(), l.end(), '=') > 0){
                         std::vector<std::string> shortcutFileLine;
                         str shortcutData, shortcutKeyData;
-                        shortcutData                = fileDataLine[i];
+                        shortcutData                = l;
                         shortcutFileLine            = shortcutData.split("=");
                         shortcutKeyData             = shortcutFileLine[0];
                         shortcutConfig.key          = shortcutKeyData.split(",");
                         shortcutConfig.func         = shortcutFileLine[1];
                         this->shortcutList.push_back(shortcutConfig);
                     }
-                    
                 }
                 return true;
             }
         }
 
         int key_func(void){
-            int registNum = this->shortcutList.size(), keyNum, registKeyNum, flag;
             vec registKeyCombination;
             if (this->keyState != "NEWKEY"){
                 return 2;
             }
-            for(int i = 0; i < registNum; i++){
-                registKeyCombination        = this->shortcutList[i].key;
-                keyNum                      = this->keyPressed.size();              //押されているキーの数
-                registKeyNum                = registKeyCombination.size();          //ショートカットのキーの数
-                
+            for(const auto& l : this->shortcutList){
+                registKeyCombination        = l.key;
                 if (registKeyCombination.vec_compare(this->keyPressed)){
-                    std::string command;
-                    command = this->shortcutList[i].func;
-                    //this->print(command);
-                    //std::async(std::launch::async, system, command.c_str());
-                    this->create_process_cmd(command);
+                    //this->print(l.func);
+                    //std::async(std::launch::async, system, l.func.c_str());
+                    this->create_process_cmd(l.func);
                     Sleep(10);
                     return 1;
                 }
