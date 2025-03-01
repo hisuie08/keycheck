@@ -23,6 +23,7 @@
 #include <chrono>
 #include <random>
 #include <unordered_map>
+#include <map>
 
 #define _USE_MATH_DEFINES //数値演算定数を定義
 #include <cmath>
@@ -32,6 +33,8 @@
 class str : public std::string{
     public:
         using std::string::string;
+        using std::string::operator+=;
+
         std::string replace_all(std::string target, std::string replacement){
             std::string::size_type pos = 0;
             std::string stringText = *this;
@@ -41,18 +44,17 @@ class str : public std::string{
             }
             return stringText;
         }
-
-        std::vector<std::string> split(std::string del) {
+        
+        std::vector<std::string> split(std::string delStr) {
             int first = 0;
-            int i = 0;
-            std::string stringText = *this;
             std::vector<std::string> result;
-            std::vector<int> subStrNum = this->find_all(del);
-            while (first < stringText.size()) {
-                std::string subStr(stringText, first, subStrNum[i] - first);
-                result.push_back(subStr); //配列の末尾に要素を追加する
-                first = subStrNum[i] + 1;
-                i++;
+            std::vector<int> subStrNum = this->find_all(delStr);
+            subStrNum.push_back(this->size()); // 最後の部分文字列を処理するために文字列の末尾を追加
+        
+            for (int i = 0; i < subStrNum.size(); ++i) {
+                std::string subStr(*this, first, subStrNum[i] - first);
+                result.push_back(subStr); // 部分文字列を結果に追加
+                first = subStrNum[i] + delStr.size();
             }
             return result;
         }
@@ -89,6 +91,15 @@ class str : public std::string{
             return *this;
         }
         
+        str operator* (int n) const{
+            if(n <= 1) return *this;
+            str result;
+            result.reserve(this->length() * n);
+            for(int i = 0 ; i < n ; i++){
+                result += *this;
+            }
+            return result;
+        }
 };
 
 class vec : public std::vector<std::string>{

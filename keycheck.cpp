@@ -120,6 +120,7 @@ class KeyCheck : public IOSet{
             else{
                 vec pressedKeys;
                 pressedKeys = this->keyPressed;
+                //this->print(pressedKeys.to_str());
                 if(pressedKeys.vec_compare(this->keyFlag)){  //ó‘Ô•Ï‰»‚È‚µ
                     this->keyState = "EQ";
                     //this->print(this->keyState);
@@ -162,12 +163,17 @@ class KeyCheck : public IOSet{
                 
                 for(std::string &l : fileDataLine){
                     if (std::count(l.begin(), l.end(), '=') > 0){
+                        shortcutConfig.key.clear();
+                        shortcutConfig.func = "";
                         std::vector<std::string> shortcutFileLine;
                         str shortcutData, shortcutKeyData;
+                        vec shortcutKey;
                         shortcutData                = l;
                         shortcutFileLine            = shortcutData.split("=");
                         shortcutKeyData             = shortcutFileLine[0];
-                        shortcutConfig.key          = shortcutKeyData.split(",");
+                        shortcutKey                 = shortcutKeyData.split(",");
+                        //this->print(shortcutKey.to_str());
+                        shortcutConfig.key          = shortcutKey;
                         shortcutConfig.func         = shortcutFileLine[1];
                         this->shortcutList.push_back(shortcutConfig);
                     }
@@ -183,6 +189,7 @@ class KeyCheck : public IOSet{
             }
             for(ShortcutConfig &l : this->shortcutList){
                 registKeyCombination        = l.key;
+                //this->print(registKeyCombination.to_str());
                 if (registKeyCombination.vec_compare(this->keyPressed)){
                     //this->print(l.func);
                     //std::async(std::launch::async, system, l.func.c_str());
