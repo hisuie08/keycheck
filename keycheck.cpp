@@ -89,7 +89,6 @@ class KeyCheck : public IOSet{
             std::vector<std::string> key;
             std::string func;
         };
-
         std::vector<ShortcutConfig> shortcutList;
 
         std::vector<std::string> keyPressed, keyFlag, newKey;
@@ -99,7 +98,7 @@ class KeyCheck : public IOSet{
         KeyCheck(std::string title, std::string fileName) : IOSet(title){
             this->shortcutFileName = fileName;
             this->shortcut_data_read();
-        };
+        }
         
         int key_state_check(void){
             this->keyPressed.clear();
@@ -118,8 +117,7 @@ class KeyCheck : public IOSet{
                 return this->keyState;
             }
             else{
-                vec pressedKeys;
-                pressedKeys = this->keyPressed;
+                vec pressedKeys = this->keyPressed;
                 //this->print(pressedKeys.to_str());
                 if(pressedKeys.vec_compare(this->keyFlag)){  //ó‘Ô•Ï‰»‚È‚µ
                     this->keyState = "EQ";
@@ -154,10 +152,9 @@ class KeyCheck : public IOSet{
                 return false;
             }
             else{
-                str shortcutFileData;
                 std::vector<std::string> fileDataLine;
                 ShortcutConfig shortcutConfig;
-                shortcutFileData                = read_file(this->shortcutFileName);
+                str shortcutFileData            = read_file(this->shortcutFileName);
                 fileDataLine                    = shortcutFileData.split("\n");
                 this->shortcutList.clear();
                 
@@ -165,16 +162,13 @@ class KeyCheck : public IOSet{
                     if (std::count(l.begin(), l.end(), '=') > 0){
                         shortcutConfig.key.clear();
                         shortcutConfig.func = "";
-                        std::vector<std::string> shortcutFileLine;
-                        str shortcutData, shortcutKeyData;
-                        vec shortcutKey;
-                        shortcutData                = l;
-                        shortcutFileLine            = shortcutData.split("=");
-                        shortcutKeyData             = shortcutFileLine[0];
-                        shortcutKey                 = shortcutKeyData.split(",");
+                        str shortcutData                            = l;
+                        std::vector<std::string> shortcutFileLine   = shortcutData.split("=");
+                        str shortcutKeyData                         = shortcutFileLine[0];
+                        //vec shortcutKey                           = shortcutKeyData.split(",");
                         //this->print(shortcutKey.to_str());
-                        shortcutConfig.key          = shortcutKey;
-                        shortcutConfig.func         = shortcutFileLine[1];
+                        shortcutConfig.key                          = shortcutKeyData.split(",");
+                        shortcutConfig.func                         = shortcutFileLine[1];
                         this->shortcutList.push_back(shortcutConfig);
                     }
                 }
@@ -183,12 +177,11 @@ class KeyCheck : public IOSet{
         }
 
         int key_func(void){
-            vec registKeyCombination;
             if (this->keyState != "NEWKEY"){
                 return 2;
             }
             for(ShortcutConfig &l : this->shortcutList){
-                registKeyCombination        = l.key;
+                vec registKeyCombination    = l.key;
                 //this->print(registKeyCombination.to_str());
                 if (registKeyCombination.vec_compare(this->keyPressed)){
                     //this->print(l.func);

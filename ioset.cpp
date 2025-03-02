@@ -33,7 +33,11 @@
 class str : public std::string{
     public:
         using std::string::string;
+        using std::string::operator=;
         using std::string::operator+=;
+
+        str() = default;
+        str(std::string target) : std::string(target){}
 
         std::string replace_all(std::string target, std::string replacement){
             std::string::size_type pos = 0;
@@ -82,13 +86,28 @@ class str : public std::string{
             return *this;
         }
 
-        str& operator= (std::string target){
-            std::string targetString = target;
-            this -> clear();
-            for(auto& s : targetString){
+        str& operator+(std::string targetText) {
+            std::string strText = targetText;
+            for(auto& s : strText){
                 this -> push_back(s);
             }
             return *this;
+        }
+
+        str operator= (std::vector<int> targetVec){
+            str result;
+            for(int& v : targetVec){
+                result += std::to_string(v);
+            }
+            return result;
+        }
+
+        str operator= (std::vector<double> targetVec){
+            str result;
+            for(double& v : targetVec){
+                result += std::to_string(v);
+            }
+            return result;
         }
         
         str operator* (int n) const{
@@ -105,6 +124,10 @@ class str : public std::string{
 class vec : public std::vector<std::string>{
     public:
         using std::vector<std::string>::vector;
+        using std::vector<std::string>::operator=;
+        vec() = default;
+        vec(std::vector<std::string> target) : std::vector<std::string>(target){}
+
         std::string to_str (){
             std::string ans = "";
             std::vector<std::string> sourceVec = *this;
@@ -125,15 +148,6 @@ class vec : public std::vector<std::string>{
             return std::equal(targetVec.begin(), targetVec.end(), sourceVec.begin(), sourceVec.end());
         }
 
-        vec& operator= (std::vector<std::string> target){
-            std::vector<std::string> targetVec = target;
-            this -> clear();
-            for(std::string& v : targetVec){
-                this -> push_back(v);
-            }
-            return *this;
-        }
-
         vec& operator= (std::vector<int> targetVec){
             this -> clear();
             for(int& v : targetVec){
@@ -148,6 +162,66 @@ class vec : public std::vector<std::string>{
                 this -> push_back(std::to_string(v));
             }
             return *this;
+        }
+
+        vec& operator= (vec targetVec){
+            this -> clear();
+            for(std::string& v : targetVec){
+                this -> push_back(v);
+            }
+            return *this;
+        }
+
+        vec& operator+ (std::vector<int> targetVec){
+            for(int& v : targetVec){
+                this -> push_back(std::to_string(v));
+            }
+            return *this;
+        }
+
+        vec& operator+ (std::vector<double> targetVec){
+            for(double& v : targetVec){
+                this -> push_back(std::to_string(v));
+            }
+            return *this;
+        }
+
+        vec& operator+ (vec targetVec){
+            for(std::string& v : targetVec){
+                this -> push_back(v);
+            }
+            return *this;
+        }
+
+        vec& operator+ (std::vector<std::string> targetVec){
+            for(std::string& v : targetVec){
+                this -> push_back(v);
+            }
+            return *this;
+        }
+
+        void operator+= (std::vector<int> targetVec){
+            for(int& v : targetVec){
+                this -> push_back(std::to_string(v));
+            }
+        }
+
+        void operator+= (std::vector<double> targetVec){
+            for(double& v : targetVec){
+                this -> push_back(std::to_string(v));
+            }
+        }
+
+        void operator+= (vec targetVec){
+            for(std::string& v : targetVec){
+                this -> push_back(v);
+            }
+        }
+
+        void operator+= (std::vector<std::string> targetVec){
+            for(std::string& v : targetVec){
+                this -> push_back(v);
+            }
         }
 };
 
