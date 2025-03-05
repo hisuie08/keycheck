@@ -248,7 +248,7 @@ class IOSet {
             this->appPathNoEX = pathData.replace_all(".exe", "");
         }
 
-        std::string title(std::string stringText){
+        std::string title(std::string stringText = ""){
             if (stringText != ""){
                 this->appTitle = stringText;
                 cmd("title " + this->appTitle);
