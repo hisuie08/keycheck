@@ -16,8 +16,6 @@
 #include <thread> 
 #include <future>
 #include <ctime>
-#include <Windows.h>
-#include <shellapi.h>
 #include <tchar.h>
 #include <direct.h>
 #include <chrono>
@@ -29,6 +27,484 @@
 #include <cmath>
 
 #define OPEN_PROCESS_TOKEN (TOKEN_ADJUST_PRIVILEGES|TOKEN_QUERY) // アクセス権の定数
+
+#ifdef __linux__ 
+    //linux code
+    #include <arpa/inet.h>
+    #include <sys/socket.h>
+    #include <unistd.h>
+    #define BUFSIZE 1024
+    #define MAXPENDING 5 // 最大接続台数
+    
+    class TCP{
+        protected:
+            int sock;
+        public:
+            TCP(){
+                this->sock = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP); /* ソケットを作成 (TCP) */
+                if (this->sock < 0) { 
+                    perror("socket() failed");
+                    this->~TCP();
+                }
+            }
+            ~TCP(){
+                close(this->sock);
+            }
+            int get_sock(){
+                return this->sock;
+            }
+            void set_sock(int sock){
+                this->sock = sock;
+            }
+            int port_connect(struct sockaddr_in *addr){ /* 接続する */
+                if (connect(this->sock, (struct sockaddr *)addr, sizeof(*addr)) < 0) { 
+                    perror("connect() failed");
+                    return 1;
+                }
+                return 0;
+            }
+            
+            int port_send(char *msg){ /* 送信する */
+                int len = strlen(msg);
+                if (send(this->sock, msg, len, 0) != len) {
+                    perror("send() failed");
+                    return 1;
+                }
+                return 0;
+            }
+            
+            int port_bind(struct sockaddr_in *addr){ /* ポートに結びつける */
+                int addrSize = sizeof(*addr);
+                if (bind(this->sock, (struct sockaddr *)addr, addrSize) < 0) { 
+                    perror("bind() failed");
+                    return 1;
+                }
+                return 0;
+            }
+            
+            int port_listen(){
+                if (listen(this->sock, MAXPENDING) < 0) {
+                    perror("listen() failed");
+                    return 1;
+                }
+                return 0;
+            }
+            
+            int port_accept(struct sockaddr_in *caddr){
+                int csock;
+                unsigned int csize = sizeof(*caddr);
+                csock = accept(this->sock, (struct sockaddr *)caddr, &csize);
+                if (csock< 0) {
+                    perror ("accept() failed");
+                    return -1;
+                }
+                return csock;
+            }
+            
+            int port_recv(int csock, char* buff){ /* 受信する */
+                int bytes;
+                bytes = recv(csock, buff, BUFSIZE - 1, 0);
+                if (bytes < 0) { // 空文字をエラーにしない
+                    perror("recv() failed");
+                    return 1;
+                }
+                buff[bytes] = '\0'; /* 文字列として扱うため最後を \0 で終端して表示する */ 
+                return 0;
+            }
+    };
+
+    class UDP{
+        protected:
+            int sock;
+        public:
+            UDP(){
+                this->sock = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP); /* ソケットを作成する (UDP)*/
+                if (this->sock < 0) { 
+                    perror("socket() failed");
+                    this->~UDP();
+                }
+            }
+            ~UDP(){
+                close(this->sock);
+            }
+            int get_sock(){
+                return this->sock;
+            }
+            void set_sock(int sock){
+                this->sock = sock;
+            }
+            int port_send(struct sockaddr_in *addr, char *msg){ /* 送信 */
+                int len = strlen(msg);
+                int addrSize = sizeof(*addr);
+                if (sendto(this->sock, msg, len, 0, (struct sockaddr *)addr, addrSize) != len){
+                    perror("sendto() failed");
+                    return 1;
+                }
+                return 0;
+            }
+            
+            int port_bind(struct sockaddr_in *addr){ /* ポートに結びつける */
+                int addrSize = sizeof(*addr);
+                if (bind(this->sock, (struct sockaddr *)addr, addrSize) < 0) { 
+                    perror("bind() failed");
+                    return 1;
+                }
+                return 0;
+            }
+            
+            int port_recv(struct sockaddr_in *caddr, char* buff){ /* 受信する */
+                int bytes;
+                unsigned int csize = sizeof(*caddr);
+            
+                bytes = recvfrom (this->sock, buff, BUFSIZE - 1, 0, (struct sockaddr *)caddr, &csize);
+                if ((bytes) < 0) { // 空文字をエラーにしない
+                    perror("recvfrom() failed");
+                    return 1;
+                }
+                buff[bytes] = '\0'; /* 文字列として扱うため最後を \0 で終端して表示する */ 
+                return 0;
+            }
+    };
+
+#elif _WIN32
+    // windows code
+    #include <WinSock2.h>
+    #include <ws2tcpip.h>
+    #include <windowsx.h>
+    #include <Windows.h>
+    //#include <shellapi.h>
+    #pragma comment(lib, "ws2_32.lib")
+    #pragma warning(disable:4996)
+    #define BUFSIZE 1024
+    #define MAXPENDING 5 // 最大接続台数
+
+    class TCP{
+        protected:
+            WSADATA wsaData;
+            int sock;
+        public:
+            TCP(){
+                WSAStartup(MAKEWORD(2, 0), &this->wsaData);   //MAKEWORD(2, 0) : winsock ver. 2.0
+                this->sock = socket(AF_INET, SOCK_STREAM, 0);  //AF_INET : IPv4、SOCK_DGRAM : UDP SOCK_STREAM : TCP
+                if (this->sock < 0) { 
+                    perror("socket() failed");
+                    this->~TCP();
+                }
+            }
+            ~TCP(){
+                closesocket(this->sock); 
+                WSACleanup();
+            }
+            int get_sock(){
+                return this->sock;
+            }
+            void set_sock(int sock){
+                this->sock = sock;
+            }
+            int port_connect(struct sockaddr_in *addr){ /* 接続する */
+                if (connect(this->sock, (struct sockaddr *)addr, sizeof(*addr)) < 0) { 
+                    perror("connect() failed");
+                    return 1;
+                }
+                return 0;
+            }
+
+            int port_send(char *msg){ /* 送信する */
+                int len = strlen(msg);
+                if (send(this->sock, msg, len, 0) != len) {
+                    perror("send() failed");
+                    return 1;
+                }
+                return 0;
+            }
+
+            int port_bind(struct sockaddr_in *addr){ /* ポートに結びつける */
+                int addrSize = sizeof(*addr);
+                if (bind(this->sock, (struct sockaddr *)addr, addrSize) < 0) { 
+                    perror("bind() failed");
+                    return 1;
+                }
+                return 0;
+            }
+
+            int port_listen(){
+                if (listen(this->sock, MAXPENDING) < 0) {
+                    perror("listen() failed");
+                    return 1;
+                }
+                return 0;
+            }
+
+            int port_accept(struct sockaddr_in *caddr){
+                int csock;
+                int csize = sizeof(*caddr);
+                csock = accept(this->sock, (struct sockaddr *)caddr, &csize);
+                if (csock< 0) {
+                    perror ("accept() failed");
+                    return -1;
+                }
+                return csock;
+            }
+
+            int port_recv(int csock, char* buff){ /* 受信する */
+                int bytes;
+                bytes = recv(csock, buff, BUFSIZE - 1, 0);
+                if (bytes < 0) { // 空文字をエラーにしない
+                    perror("recv() failed");
+                    return 1;
+                }
+                buff[bytes] = '\0'; /* 文字列として扱うため最後を \0 で終端して表示する */ 
+                return 0;
+            }
+
+    };
+
+    class UDP{
+        protected:
+            WSADATA wsaData;
+            int sock;
+        public:
+            UDP(){
+                WSAStartup(MAKEWORD(2, 0), &this->wsaData);   //MAKEWORD(2, 0) : winsock ver. 2.0
+                this->sock = socket(AF_INET, SOCK_DGRAM, 0);  //AF_INET : IPv4、SOCK_DGRAM : UDP SOCK_STREAM : TCP
+                if (this->sock < 0) { 
+                    perror("socket() failed");
+                    this->~UDP();
+                }
+            }
+            ~UDP(){
+                closesocket(this->sock); 
+                WSACleanup();
+            }
+            int get_sock(){
+                return this->sock;
+            }
+            void set_sock(int sock){
+                this->sock = sock;
+            }
+            int port_send(struct sockaddr_in *addr, char *msg){ /* 送信 */
+                int len = strlen(msg);
+                int addrSize = sizeof(*addr);
+                if (sendto(this->sock, msg, len, 0, (struct sockaddr *)addr, addrSize) != len){
+                    perror("sendto() failed");
+                    return 1;
+                }
+                return 0;
+            }
+            
+            int port_bind(struct sockaddr_in *addr){ /* ポートに結びつける */
+                int addrSize = sizeof(*addr);
+                if (bind(this->sock, (struct sockaddr *)addr, addrSize) < 0) { 
+                    perror("bind() failed");
+                    return 1;
+                }
+                return 0;
+            }
+            
+            int port_recv(struct sockaddr_in *caddr, char* buff){ /* 受信する */
+                int bytes;
+                int csize = sizeof(*caddr);
+            
+                bytes = recvfrom (this->sock, buff, BUFSIZE - 1, 0, (struct sockaddr *)caddr, &csize);
+                if ((bytes) < 0) { // 空文字をエラーにしない
+                    perror("recvfrom() failed");
+                    return 1;
+                }
+                buff[bytes] = '\0'; /* 文字列として扱うため最後を \0 で終端して表示する */ 
+                return 0;
+            }
+
+    };
+
+    #define TRAY_H
+    #define WM_TRAY_CALLBACK_MESSAGE (WM_USER + 1)
+    #define WC_TRAY_CLASS_NAME "TRAY"
+    #define ID_TRAY_FIRST 1000
+    HMENU   trayMenuItem;
+    struct tray_menu;
+
+    struct tray {
+        char *icon;        
+        struct tray_menu *menu;
+    };
+
+    struct tray_menu {
+        char *text;
+        int disabled;
+        int checked;
+
+        void (*cb)(struct tray_menu *);
+        void *context;
+
+        struct tray_menu *submenu;
+    };
+
+    class TaskTray{ //タスクトレイ
+        protected:
+            WNDCLASSEX      wc;
+            NOTIFYICONDATA  nid;
+            HWND            hwnd;
+            UINT            id;
+
+        public:
+            HMENU _tray_menu(struct tray_menu *m) {
+                HMENU hMenu = CreatePopupMenu();
+                for (; m != NULL && m->text != NULL; m++, (this->id)++) {
+                    if (strcmp(m->text, "-") == 0) {
+                        InsertMenu(hMenu, this->id, MF_SEPARATOR, TRUE, "");
+                    } 
+                    else {
+                        MENUITEMINFO item;
+                        memset(&item, 0, sizeof(item));
+                        item.cbSize = sizeof(MENUITEMINFO);
+                        item.fMask = MIIM_ID | MIIM_TYPE | MIIM_STATE | MIIM_DATA;
+                        item.fType = 0;
+                        item.fState = 0;
+                        if (m->submenu != NULL) {
+                            item.fMask = item.fMask | MIIM_SUBMENU;
+                            item.hSubMenu = this->_tray_menu(m->submenu);
+                        }
+                        if (m->disabled) {
+                            item.fState |= MFS_DISABLED;
+                        }
+                        if (m->checked) {
+                            item.fState |= MFS_CHECKED;
+                        }
+                        item.wID = this->id;
+                        item.dwTypeData = m->text;
+                        item.dwItemData = (ULONG_PTR)m;
+
+                        InsertMenuItem(hMenu, this->id, TRUE, &item);
+                    }
+                }
+                return hMenu;
+            }
+
+            int tray_loop(int blocking) {
+                MSG msg;
+                if (blocking) {
+                    GetMessage(&msg, NULL, 0, 0);
+                } 
+                else {
+                    PeekMessage(&msg, NULL, 0, 0, PM_REMOVE);
+                }
+                if (msg.message == WM_QUIT) {
+                    return -1;
+                }
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+                return 0;
+            }
+
+            void tray_update(struct tray *taskTray) {
+                HMENU prevmenu = trayMenuItem;
+                trayMenuItem = this->_tray_menu(taskTray->menu);
+                SendMessage(this->hwnd, WM_INITMENUPOPUP, (WPARAM)trayMenuItem, 0);
+                HICON icon;
+                ExtractIconEx(taskTray->icon, 0, NULL, &icon, 1);
+                if (this->nid.hIcon) {
+                    DestroyIcon(this->nid.hIcon);
+                }
+                this->nid.hIcon = icon;
+                Shell_NotifyIcon(NIM_MODIFY, &nid);
+
+                if (prevmenu != NULL) {
+                    DestroyMenu(prevmenu);
+                }
+            }
+
+            TaskTray(std::string menuName) {
+                this->id = ID_TRAY_FIRST;
+                memset(&this->wc, 0, sizeof(this->wc));
+                this->wc.cbSize = sizeof(WNDCLASSEX);
+                this->wc.lpfnWndProc = (WNDPROC)this->_tray_wnd_proc;
+                this->wc.hInstance = GetModuleHandle(NULL);
+                this->wc.lpszClassName = WC_TRAY_CLASS_NAME;
+                this->wc.lpszMenuName = menuName.c_str();
+                if (!RegisterClassEx(&this->wc)) {
+                    return;
+                }
+
+                this->hwnd = CreateWindowEx(0, WC_TRAY_CLASS_NAME, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                if (this->hwnd == NULL) {
+                    return;
+                }
+                UpdateWindow(this->hwnd);
+
+                memset(&this->nid, 0, sizeof(this->nid));
+                this->nid.cbSize = sizeof(NOTIFYICONDATA);
+                this->nid.hWnd = this->hwnd;
+                this->nid.uID = 0;
+                this->nid.uFlags = NIF_ICON | NIF_MESSAGE;
+                this->nid.uCallbackMessage = WM_TRAY_CALLBACK_MESSAGE;
+                lstrcpy( this->nid.szTip, TEXT(menuName.c_str())); 
+                Shell_NotifyIcon(NIM_ADD, &this->nid);
+                return;
+            }
+            void tray_exit() {
+                Shell_NotifyIcon(NIM_DELETE, &this->nid);
+                if (this->nid.hIcon != 0) {
+                    DestroyIcon(this->nid.hIcon);
+                }
+                if (trayMenuItem != 0) {
+                    DestroyMenu(trayMenuItem);
+                }
+                PostQuitMessage(0);
+                UnregisterClass(WC_TRAY_CLASS_NAME, GetModuleHandle(NULL));
+            }
+
+            static LRESULT CALLBACK _tray_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+                switch (msg) {
+                    case WM_CLOSE:
+                        DestroyWindow(hwnd);
+                        return 0;
+                    case WM_DESTROY:
+                        PostQuitMessage(0);
+                        return 0;
+                    case WM_TRAY_CALLBACK_MESSAGE:
+                        switch (lparam){
+                            case WM_LBUTTONUP:
+                            case WM_RBUTTONUP:
+                                POINT p;
+                                GetCursorPos(&p);
+                                SetForegroundWindow(hwnd);
+                                WORD cmd = TrackPopupMenu(
+                                    trayMenuItem, TPM_LEFTALIGN | 
+                                    TPM_RIGHTBUTTON | 
+                                    TPM_RETURNCMD | 
+                                    TPM_NONOTIFY,
+                                    p.x, 
+                                    p.y, 
+                                    0, 
+                                    hwnd, 
+                                    NULL
+                                );
+                                SendMessage(hwnd, WM_COMMAND, cmd, 0);
+                                return 0;
+                        }
+                        break;
+                    case WM_COMMAND:
+                        if (wparam >= ID_TRAY_FIRST) {
+                            MENUITEMINFO item = {
+                                .cbSize = sizeof(MENUITEMINFO), .fMask = MIIM_ID | MIIM_DATA,
+                            };
+                            if (GetMenuItemInfo(trayMenuItem, wparam, FALSE, &item)) {
+                                struct tray_menu *menu = (struct tray_menu *)item.dwItemData;
+                                if (menu != NULL && menu->cb != NULL) {
+                                    menu->cb(menu);
+                                }
+                            }
+                            return 0;
+                        }
+                        break;
+                }
+                return DefWindowProc(hwnd, msg, wparam, lparam);
+            }
+    };
+
+#else
+
+#endif
 
 class str : public std::string{
     public:
@@ -496,191 +972,7 @@ class IOSet {
 };
 
 
-#define TRAY_H
-#define WM_TRAY_CALLBACK_MESSAGE (WM_USER + 1)
-#define WC_TRAY_CLASS_NAME "TRAY"
-#define ID_TRAY_FIRST 1000
-HMENU   trayMenuItem;
-struct tray_menu;
 
-struct tray {
-    char *icon;        
-    struct tray_menu *menu;
-};
-
-struct tray_menu {
-    char *text;
-    int disabled;
-    int checked;
-
-    void (*cb)(struct tray_menu *);
-    void *context;
-
-    struct tray_menu *submenu;
-};
-
-class TaskTray{ //タスクトレイ
-    protected:
-        WNDCLASSEX      wc;
-        NOTIFYICONDATA  nid;
-        HWND            hwnd;
-        UINT            id;
-    
-    public:
-        HMENU _tray_menu(struct tray_menu *m) {
-            HMENU hMenu = CreatePopupMenu();
-            for (; m != NULL && m->text != NULL; m++, (this->id)++) {
-                if (strcmp(m->text, "-") == 0) {
-                    InsertMenu(hMenu, this->id, MF_SEPARATOR, TRUE, "");
-                } 
-                else {
-                    MENUITEMINFO item;
-                    memset(&item, 0, sizeof(item));
-                    item.cbSize = sizeof(MENUITEMINFO);
-                    item.fMask = MIIM_ID | MIIM_TYPE | MIIM_STATE | MIIM_DATA;
-                    item.fType = 0;
-                    item.fState = 0;
-                    if (m->submenu != NULL) {
-                        item.fMask = item.fMask | MIIM_SUBMENU;
-                        item.hSubMenu = this->_tray_menu(m->submenu);
-                    }
-                    if (m->disabled) {
-                        item.fState |= MFS_DISABLED;
-                    }
-                    if (m->checked) {
-                        item.fState |= MFS_CHECKED;
-                    }
-                    item.wID = this->id;
-                    item.dwTypeData = m->text;
-                    item.dwItemData = (ULONG_PTR)m;
-
-                    InsertMenuItem(hMenu, this->id, TRUE, &item);
-                }
-            }
-            return hMenu;
-        }
-
-        int tray_loop(int blocking) {
-            MSG msg;
-            if (blocking) {
-                GetMessage(&msg, NULL, 0, 0);
-            } 
-            else {
-                PeekMessage(&msg, NULL, 0, 0, PM_REMOVE);
-            }
-            if (msg.message == WM_QUIT) {
-                return -1;
-            }
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-            return 0;
-        }
-
-        void tray_update(struct tray *taskTray) {
-            HMENU prevmenu = trayMenuItem;
-            trayMenuItem = this->_tray_menu(taskTray->menu);
-            SendMessage(this->hwnd, WM_INITMENUPOPUP, (WPARAM)trayMenuItem, 0);
-            HICON icon;
-            ExtractIconEx(taskTray->icon, 0, NULL, &icon, 1);
-            if (this->nid.hIcon) {
-                DestroyIcon(this->nid.hIcon);
-            }
-            this->nid.hIcon = icon;
-            Shell_NotifyIcon(NIM_MODIFY, &nid);
-
-            if (prevmenu != NULL) {
-                DestroyMenu(prevmenu);
-            }
-        }
-        
-        TaskTray(std::string menuName) {
-            this->id = ID_TRAY_FIRST;
-            memset(&this->wc, 0, sizeof(this->wc));
-            this->wc.cbSize = sizeof(WNDCLASSEX);
-            this->wc.lpfnWndProc = (WNDPROC)this->_tray_wnd_proc;
-            this->wc.hInstance = GetModuleHandle(NULL);
-            this->wc.lpszClassName = WC_TRAY_CLASS_NAME;
-            this->wc.lpszMenuName = menuName.c_str();
-            if (!RegisterClassEx(&this->wc)) {
-                return;
-            }
-
-            this->hwnd = CreateWindowEx(0, WC_TRAY_CLASS_NAME, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-            if (this->hwnd == NULL) {
-                return;
-            }
-            UpdateWindow(this->hwnd);
-
-            memset(&this->nid, 0, sizeof(this->nid));
-            this->nid.cbSize = sizeof(NOTIFYICONDATA);
-            this->nid.hWnd = this->hwnd;
-            this->nid.uID = 0;
-            this->nid.uFlags = NIF_ICON | NIF_MESSAGE;
-            this->nid.uCallbackMessage = WM_TRAY_CALLBACK_MESSAGE;
-            lstrcpy( this->nid.szTip, TEXT(menuName.c_str())); 
-            Shell_NotifyIcon(NIM_ADD, &this->nid);
-            return;
-        }
-        void tray_exit() {
-            Shell_NotifyIcon(NIM_DELETE, &this->nid);
-            if (this->nid.hIcon != 0) {
-                DestroyIcon(this->nid.hIcon);
-            }
-            if (trayMenuItem != 0) {
-                DestroyMenu(trayMenuItem);
-            }
-            PostQuitMessage(0);
-            UnregisterClass(WC_TRAY_CLASS_NAME, GetModuleHandle(NULL));
-        }
-
-        static LRESULT CALLBACK _tray_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-            switch (msg) {
-                case WM_CLOSE:
-                    DestroyWindow(hwnd);
-                    return 0;
-                case WM_DESTROY:
-                    PostQuitMessage(0);
-                    return 0;
-                case WM_TRAY_CALLBACK_MESSAGE:
-                    switch (lparam){
-                        case WM_LBUTTONUP:
-                        case WM_RBUTTONUP:
-                            POINT p;
-                            GetCursorPos(&p);
-                            SetForegroundWindow(hwnd);
-                            WORD cmd = TrackPopupMenu(
-                                trayMenuItem, TPM_LEFTALIGN | 
-                                TPM_RIGHTBUTTON | 
-                                TPM_RETURNCMD | 
-                                TPM_NONOTIFY,
-                                p.x, 
-                                p.y, 
-                                0, 
-                                hwnd, 
-                                NULL
-                            );
-                            SendMessage(hwnd, WM_COMMAND, cmd, 0);
-                            return 0;
-                    }
-                    break;
-                case WM_COMMAND:
-                    if (wparam >= ID_TRAY_FIRST) {
-                        MENUITEMINFO item = {
-                            .cbSize = sizeof(MENUITEMINFO), .fMask = MIIM_ID | MIIM_DATA,
-                        };
-                        if (GetMenuItemInfo(trayMenuItem, wparam, FALSE, &item)) {
-                            struct tray_menu *menu = (struct tray_menu *)item.dwItemData;
-                            if (menu != NULL && menu->cb != NULL) {
-                                menu->cb(menu);
-                            }
-                        }
-                        return 0;
-                    }
-                    break;
-            }
-            return DefWindowProc(hwnd, msg, wparam, lparam);
-        }
-};
 
 //TaskTray taskTray("ABC");
 //void finish(tray_menu *){
