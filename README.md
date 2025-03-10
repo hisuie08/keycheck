@@ -6,6 +6,7 @@
 ## 起動方法
 ### コンパイル
 MinGW : `g++ -g keycheck.cpp -pthread -mwindows -o keycheck.exe`  
+GNUMake：`make`
 
 ## 特殊キーについて
 |       特殊キー      |        キー名       |
