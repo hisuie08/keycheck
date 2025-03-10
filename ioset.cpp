@@ -16,8 +16,6 @@
 #include <thread> 
 #include <future>
 #include <ctime>
-#include <tchar.h>
-#include <direct.h>
 #include <chrono>
 #include <random>
 #include <unordered_map>
@@ -27,6 +25,203 @@
 #include <cmath>
 
 #define OPEN_PROCESS_TOKEN (TOKEN_ADJUST_PRIVILEGES|TOKEN_QUERY) // アクセス権の定数
+
+class str : public std::string{
+    public:
+        using std::string::string;
+        using std::string::operator=;
+        using std::string::operator+=;
+
+        //str() = default;
+        str(std::string target) : std::string(target){}
+
+        std::string replace_all(std::string target, std::string replacement){
+            std::string::size_type pos = 0;
+            std::string stringText = *this;
+            while ((pos = stringText.find(target, pos)) != std::string::npos) {
+                stringText.replace(pos, target.length(), replacement);
+                pos += replacement.length();
+            }
+            return stringText;
+        }
+        
+        std::vector<std::string> split(std::string delStr) {
+            int first = 0;
+            std::vector<std::string> result;
+            std::vector<int> subStrNum = this->find_all(delStr);
+            subStrNum.push_back(this->size()); // 最後の部分文字列を処理するために文字列の末尾を追加
+        
+            for (int i = 0; i < subStrNum.size(); ++i) {
+                std::string subStr(*this, first, subStrNum[i] - first);
+                result.push_back(subStr); // 部分文字列を結果に追加
+                first = subStrNum[i] + delStr.size();
+            }
+            return result;
+        }
+
+        std::vector<int> find_all(std::string subStr) {
+            std::vector<int> result;
+            std::string stringText = *this;
+            int subStrSize = subStr.size();
+            int pos = stringText.find(subStr);
+            while (pos != std::string::npos) {
+                result.push_back(pos);
+                pos = stringText.find(subStr, pos + subStrSize);
+            }
+            return result;
+        }
+        std::string to_string(){
+            return (std::string)*this;
+        }
+
+        str& operator+(const str &targetText) {
+            str strText = targetText;
+            for(auto& s : strText){
+                this -> push_back(s);
+            }
+            return *this;
+        }
+
+        str& operator+(std::string targetText) {
+            std::string strText = targetText;
+            for(auto& s : strText){
+                this -> push_back(s);
+            }
+            return *this;
+        }
+
+        str operator= (std::vector<int> targetVec){
+            str result;
+            for(int& v : targetVec){
+                result += std::to_string(v);
+            }
+            return result;
+        }
+
+        str operator= (std::vector<double> targetVec){
+            str result;
+            for(double& v : targetVec){
+                result += std::to_string(v);
+            }
+            return result;
+        }
+        
+        str operator* (int n) const{
+            if(n <= 1) return *this;
+            str result;
+            result.reserve(this->length() * n);
+            for(int i = 0 ; i < n ; i++){
+                result += *this;
+            }
+            return result;
+        }
+};
+
+class vec : public std::vector<std::string>{
+    public:
+        using std::vector<std::string>::vector;
+        using std::vector<std::string>::operator=;
+        //vec() = default;
+        vec(std::vector<std::string> target) : std::vector<std::string>(target){}
+
+        std::string to_str (){
+            std::string ans = "";
+            std::vector<std::string> sourceVec = *this;
+            for(std::string& s : sourceVec){
+                ans = ans + s;
+            }
+            return ans;
+        }
+        std::vector<std::string> to_vec (){
+            return (std::vector<std::string>)*this;
+        }
+
+        int vec_compare(std::vector<std::string> target){
+            std::vector<std::string> targetVec = target;
+            std::vector<std::string> sourceVec = *this;
+            std::sort(targetVec.begin(), targetVec.end());
+            std::sort(sourceVec.begin(), sourceVec.end());
+            return std::equal(targetVec.begin(), targetVec.end(), sourceVec.begin(), sourceVec.end());
+        }
+
+        vec& operator= (std::vector<int> targetVec){
+            this -> clear();
+            for(int& v : targetVec){
+                this -> push_back(std::to_string(v));
+            }
+            return *this;
+        }
+
+        vec& operator= (std::vector<double> targetVec){
+            this -> clear();
+            for(double& v : targetVec){
+                this -> push_back(std::to_string(v));
+            }
+            return *this;
+        }
+
+        vec& operator= (vec targetVec){
+            this -> clear();
+            for(std::string& v : targetVec){
+                this -> push_back(v);
+            }
+            return *this;
+        }
+
+        vec& operator+ (std::vector<int> targetVec){
+            for(int& v : targetVec){
+                this -> push_back(std::to_string(v));
+            }
+            return *this;
+        }
+
+        vec& operator+ (std::vector<double> targetVec){
+            for(double& v : targetVec){
+                this -> push_back(std::to_string(v));
+            }
+            return *this;
+        }
+
+        vec& operator+ (vec targetVec){
+            for(std::string& v : targetVec){
+                this -> push_back(v);
+            }
+            return *this;
+        }
+
+        vec& operator+ (std::vector<std::string> targetVec){
+            for(std::string& v : targetVec){
+                this -> push_back(v);
+            }
+            return *this;
+        }
+
+        void operator+= (std::vector<int> targetVec){
+            for(int& v : targetVec){
+                this -> push_back(std::to_string(v));
+            }
+        }
+
+        void operator+= (std::vector<double> targetVec){
+            for(double& v : targetVec){
+                this -> push_back(std::to_string(v));
+            }
+        }
+
+        void operator+= (vec targetVec){
+            for(std::string& v : targetVec){
+                this -> push_back(v);
+            }
+        }
+
+        void operator+= (std::vector<std::string> targetVec){
+            for(std::string& v : targetVec){
+                this -> push_back(v);
+            }
+        }
+};
+
+
 
 #ifdef __linux__ 
     //linux code
@@ -172,6 +367,8 @@
 
 #elif _WIN32
     // windows code
+    #include <direct.h>
+    #include <tchar.h>
     #include <WinSock2.h>
     #include <ws2tcpip.h>
     #include <windowsx.h>
@@ -509,476 +706,280 @@
                 return DefWindowProc(hwnd, msg, wparam, lparam);
             }
     };
+    
+    class IOSet {
+        protected:
+            std::string appTitle; //コマンドプロンプトのタイトル
+            std::string pwdPath; //カレントディレクトリ
+            std::string appPath; //ファイルパス
+            std::string appPathNoEX; //ファイルパス(拡張子無し)
+        
+        public:
+            IOSet(std::string text = "タイトル") {
+                std::string cmdLn;
+                char path[256];
+                this->appTitle = text;
+                if (this->appTitle != ""){
+                    this->title(this->appTitle);
+                }
+                GetCurrentDirectory(sizeof(path), path);
+                this->pwdPath = path;
+                GetModuleFileName(NULL, path, sizeof(path));
+                this->appPath = path;
+                str pathData(path);
+                this->appPathNoEX = pathData.replace_all(".exe", "");
+            }
+        
+            std::string title(std::string stringText = ""){
+                if (stringText != ""){
+                    this->appTitle = stringText;
+                    cmd("title " + this->appTitle);
+                }
+                return this->appTitle;
+            }
+            
+            std::string print(std::string stringText, std::string stringEnd = "\n") {
+                std::cout << stringText << stringEnd << std::flush;
+                return stringText;
+            }
+            std::string input(std::string stringPrompt = "") {
+                std::string inputText;
+                if (stringPrompt != ""){
+                    std::cout << stringPrompt << std::endl; // 「std::endl」 \n とバッファをフラッシュ
+                }
+                std::getline(std::cin, inputText);
+                return inputText;
+            }
+            std::string cmd(std::string stringCmd) {
+                system(stringCmd.c_str());
+                return stringCmd;
+            }
+            int create_process_cmd(std::string stringCmd){
+                std::string cmdLog = "";
+                cmdLog = stringCmd;
+                STARTUPINFO si;
+                PROCESS_INFORMATION pi;
+                ZeroMemory( &si, sizeof(si) );
+                si.cb = sizeof(si);
+                ZeroMemory( &pi, sizeof(pi) );
+                // Start the child process. 
+                CreateProcess( 
+                    NULL,   // No module name (use command line)
+                    TEXT((char*)cmdLog.c_str()),        // Command line
+                    NULL,           // Process handle not inheritable
+                    NULL,           // Thread handle not inheritable
+                    FALSE,          // Set handle inheritance to FALSE
+                    0,              // No creation flags
+                    NULL,           // Use parent's environment block
+                    NULL,           // Use parent's starting directory 
+                    &si,            // Pointer to STARTUPINFO structure
+                    &pi            // Pointer to PROCESS_INFORMATION structure
+                );
+            
+                Sleep(100); //起動出来るまで待つ
+            
+                // Close process and thread handles. 
+                CloseHandle( pi.hProcess );
+                CloseHandle( pi.hThread );
+            
+                return 0;
+            }
+        
+            // プロセスハンドルから特権名を有効/無効
+            BOOL ProcessPrivilegeName( HANDLE hProcess, LPCTSTR lpPrivilegeName, BOOL bEnable ){
+                BOOL                bSuccess = FALSE; // 戻り値(成功/失敗)
+                HANDLE              hToken;     // アクセストークンのハンドル
+                LUID                Luid;       // LUID(ローカル・ユニークID)
+                DWORD               dwSize;     // 特権トークン容量(変更前の特権)
+                TOKEN_PRIVILEGES    OldPriv;    // 特権トークン情報(変更前の特権)
+                TOKEN_PRIVILEGES    NewPriv;    // 特権トークン情報(新しい特権)
+            
+                // アクセストークンのハンドルを取得
+                if ( OpenProcessToken(hProcess,OPEN_PROCESS_TOKEN,&hToken) ){
+                    if ( LookupPrivilegeValue(NULL,lpPrivilegeName,&Luid) ){    // 特権名のLUIDを取得
+                        NewPriv.PrivilegeCount              = 1;                // 特権数
+                        NewPriv.Privileges[0].Luid          = Luid;             // 識別子
+                        NewPriv.Privileges[0].Attributes    = bEnable ? SE_PRIVILEGE_ENABLED : 0;
+                    
+                        // 特権トークン状態の有効/無効
+                        if ( AdjustTokenPrivileges(hToken,FALSE,&NewPriv,sizeof(TOKEN_PRIVILEGES),&OldPriv,&dwSize) ){
+                            if ( GetLastError() == ERROR_SUCCESS ){
+                                bSuccess = TRUE;
+                            }
+                        }
+                    }
+                    CloseHandle( hToken );
+                }
+                return bSuccess;
+            }
+            int shutdown(std::string op,int second){
+                int uFlag;
+                if (op == "logoff"){
+                    uFlag = EWX_LOGOFF;
+                }
+                else if(op == "shutdown"){
+                    uFlag = EWX_SHUTDOWN;
+                }
+                else if(op == "reboot"){
+                    uFlag = EWX_REBOOT;
+                }
+                Sleep(second * 1000);
+            
+                // ログオフ/シャットダウン/再起動を実行する
+                this->ProcessPrivilegeName( GetCurrentProcess(), SE_SHUTDOWN_NAME, TRUE );
+                ExitWindowsEx( uFlag, 0 );
+                return 0;
+            }
+        
+            std::string path(int mode) {
+                switch(mode){
+                    case 1:
+                        return this->appPathNoEX;
+                    default:
+                        return this->appPath;
+                }
+            }
+            std::string pwd() {
+                return this->pwdPath;
+            }
+            int MsgBox(
+                std::string msgBoxTitle = "タイトル",
+                std::string msgBoxText = "テキスト",
+                int button = 0,
+                int icon = 0,
+                int help = 0
+            ){
+                int ans;
+                int val1 = 0, val2 =  0, val3 = 0, forms = 0;
+                switch(button){
+                    case 1:
+                        val1 = MB_OKCANCEL;
+                        break;
+                    case 2:
+                        val1 = MB_ABORTRETRYIGNORE;
+                        break;
+                    case 3:
+                        val1 = MB_YESNOCANCEL;
+                        break;
+                    case 4:
+                        val1 = MB_YESNO;        
+                        break;
+                    case 5:
+                        val1 = MB_RETRYCANCEL;
+                        break;
+                    default:
+                        val1 = MB_OK;
+                        break;
+                }
+                switch(icon){
+                    case 1:
+                    case MB_ICONWARNING:
+                        val2 = MB_ICONWARNING;
+                        break;
+                    case 2:
+                    case MB_ICONINFORMATION:
+                        val2 = MB_ICONINFORMATION;
+                        break;
+                    case 3:
+                    case MB_ICONQUESTION:
+                        val2 = MB_ICONQUESTION;
+                        break;
+                    case 4:
+                    case MB_ICONERROR:
+                        val2 = MB_ICONERROR;
+                        break;
+                    default:
+                        break;
+                }
+                switch(help){
+                    case 1:
+                    case MB_HELP:
+                        val3 = MB_HELP;
+                        break;
+                    default:
+                        break;
+                }
+                forms = val1 | val2 | val3;
+                ans = MessageBox(NULL , msgBoxText.c_str(), msgBoxTitle.c_str(), forms );
+                return ans;
+            }
+            std::string read_file(std::string filePath){
+                std::ifstream ifs(filePath);
+                std::string fileData = "";
+                std::string str;
+                if (ifs.fail()) {
+                    return "FALSE";
+                }
+                while (std::getline(ifs, str)) {
+                    fileData = fileData + str + "\n";
+                }
+                return fileData;
+            }
+            
+            int write_file(std::string filePath, std::string data, std::string mode = "a"){
+                if (mode == "a"){
+                    if (filePath == this->appPathNoEX + ".cpp" || filePath == this->appPath){
+                        int ans;
+                        ans = this->MsgBox("警告", "このプログラムの重要ファイルです。\n書き換えますか？", 4, 1, 0);
+                        if (ans == IDNO){
+                            this->print("アクセス拒否されました。");
+                            return 2;
+                        }
+                    }
+                    std::string sdata = read_file(filePath); //データ読み込み
+                    std::ofstream ofs(filePath); //空ファイルにする
+                    if (ofs.fail()){
+                        this->print("FALSE");
+                        return -1;
+                    }
+                    ofs << sdata << data << std::endl;
+                    this->print(filePath + "に追加書き込み完了しました。");
+                    return 0;
+                }
+                else if (mode == "w"){
+                    if (filePath == this->appPathNoEX + ".cpp" || filePath == this->appPath){
+                        int ans;
+                        ans = this->MsgBox("警告", "このプログラムの重要ファイルです。\nエディタで書き換えてください！！", 0, 4, 0);
+                        this->print("アクセス拒否されました。");
+                        return -1;
+                    }
+                    std::ofstream ofs(filePath); //空ファイルにする
+                    if (ofs.fail()){
+                        this->print("FALSE");
+                        this->print("書き込み失敗");
+                        return -1;
+                    }
+                    ofs << data << std::endl;
+                    this->print(filePath + "に書き込み完了しました。");
+                    return 0;
+                }
+                else{
+                    this->print("モードが違います。");
+                    return -1;
+                }
+            }
+            std::vector<int> get_now_time() {
+                time_t t = time(nullptr);
+                struct tm* nowTime = localtime(&t);
+                std::vector<int> value = {
+                    nowTime->tm_year + 1900,
+                    nowTime->tm_mon + 1,
+                    nowTime->tm_mday,
+                    nowTime->tm_hour,
+                    nowTime->tm_min,
+                    nowTime->tm_sec
+                };
+                return value;
+            }
+            int random_num() {
+                std::random_device rnd;
+                return rnd();
+            }
+    };
 
 #else
 
 #endif
-
-class str : public std::string{
-    public:
-        using std::string::string;
-        using std::string::operator=;
-        using std::string::operator+=;
-
-        //str() = default;
-        str(std::string target) : std::string(target){}
-
-        std::string replace_all(std::string target, std::string replacement){
-            std::string::size_type pos = 0;
-            std::string stringText = *this;
-            while ((pos = stringText.find(target, pos)) != std::string::npos) {
-                stringText.replace(pos, target.length(), replacement);
-                pos += replacement.length();
-            }
-            return stringText;
-        }
-        
-        std::vector<std::string> split(std::string delStr) {
-            int first = 0;
-            std::vector<std::string> result;
-            std::vector<int> subStrNum = this->find_all(delStr);
-            subStrNum.push_back(this->size()); // 最後の部分文字列を処理するために文字列の末尾を追加
-        
-            for (int i = 0; i < subStrNum.size(); ++i) {
-                std::string subStr(*this, first, subStrNum[i] - first);
-                result.push_back(subStr); // 部分文字列を結果に追加
-                first = subStrNum[i] + delStr.size();
-            }
-            return result;
-        }
-
-        std::vector<int> find_all(std::string subStr) {
-            std::vector<int> result;
-            std::string stringText = *this;
-            int subStrSize = subStr.size();
-            int pos = stringText.find(subStr);
-            while (pos != std::string::npos) {
-                result.push_back(pos);
-                pos = stringText.find(subStr, pos + subStrSize);
-            }
-            return result;
-        }
-        std::string to_string(){
-            return (std::string)*this;
-        }
-
-        str& operator+(const str &targetText) {
-            str strText = targetText;
-            for(auto& s : strText){
-                this -> push_back(s);
-            }
-            return *this;
-        }
-
-        str& operator+(std::string targetText) {
-            std::string strText = targetText;
-            for(auto& s : strText){
-                this -> push_back(s);
-            }
-            return *this;
-        }
-
-        str operator= (std::vector<int> targetVec){
-            str result;
-            for(int& v : targetVec){
-                result += std::to_string(v);
-            }
-            return result;
-        }
-
-        str operator= (std::vector<double> targetVec){
-            str result;
-            for(double& v : targetVec){
-                result += std::to_string(v);
-            }
-            return result;
-        }
-        
-        str operator* (int n) const{
-            if(n <= 1) return *this;
-            str result;
-            result.reserve(this->length() * n);
-            for(int i = 0 ; i < n ; i++){
-                result += *this;
-            }
-            return result;
-        }
-};
-
-class vec : public std::vector<std::string>{
-    public:
-        using std::vector<std::string>::vector;
-        using std::vector<std::string>::operator=;
-        //vec() = default;
-        vec(std::vector<std::string> target) : std::vector<std::string>(target){}
-
-        std::string to_str (){
-            std::string ans = "";
-            std::vector<std::string> sourceVec = *this;
-            for(std::string& s : sourceVec){
-                ans = ans + s;
-            }
-            return ans;
-        }
-        std::vector<std::string> to_vec (){
-            return (std::vector<std::string>)*this;
-        }
-
-        int vec_compare(std::vector<std::string> target){
-            std::vector<std::string> targetVec = target;
-            std::vector<std::string> sourceVec = *this;
-            std::sort(targetVec.begin(), targetVec.end());
-            std::sort(sourceVec.begin(), sourceVec.end());
-            return std::equal(targetVec.begin(), targetVec.end(), sourceVec.begin(), sourceVec.end());
-        }
-
-        vec& operator= (std::vector<int> targetVec){
-            this -> clear();
-            for(int& v : targetVec){
-                this -> push_back(std::to_string(v));
-            }
-            return *this;
-        }
-
-        vec& operator= (std::vector<double> targetVec){
-            this -> clear();
-            for(double& v : targetVec){
-                this -> push_back(std::to_string(v));
-            }
-            return *this;
-        }
-
-        vec& operator= (vec targetVec){
-            this -> clear();
-            for(std::string& v : targetVec){
-                this -> push_back(v);
-            }
-            return *this;
-        }
-
-        vec& operator+ (std::vector<int> targetVec){
-            for(int& v : targetVec){
-                this -> push_back(std::to_string(v));
-            }
-            return *this;
-        }
-
-        vec& operator+ (std::vector<double> targetVec){
-            for(double& v : targetVec){
-                this -> push_back(std::to_string(v));
-            }
-            return *this;
-        }
-
-        vec& operator+ (vec targetVec){
-            for(std::string& v : targetVec){
-                this -> push_back(v);
-            }
-            return *this;
-        }
-
-        vec& operator+ (std::vector<std::string> targetVec){
-            for(std::string& v : targetVec){
-                this -> push_back(v);
-            }
-            return *this;
-        }
-
-        void operator+= (std::vector<int> targetVec){
-            for(int& v : targetVec){
-                this -> push_back(std::to_string(v));
-            }
-        }
-
-        void operator+= (std::vector<double> targetVec){
-            for(double& v : targetVec){
-                this -> push_back(std::to_string(v));
-            }
-        }
-
-        void operator+= (vec targetVec){
-            for(std::string& v : targetVec){
-                this -> push_back(v);
-            }
-        }
-
-        void operator+= (std::vector<std::string> targetVec){
-            for(std::string& v : targetVec){
-                this -> push_back(v);
-            }
-        }
-};
-
-class IOSet {
-    protected:
-        std::string appTitle; //コマンドプロンプトのタイトル
-        std::string pwdPath; //カレントディレクトリ
-        std::string appPath; //ファイルパス
-        std::string appPathNoEX; //ファイルパス(拡張子無し)
-    
-    public:
-        IOSet(std::string text = "タイトル") {
-            std::string cmdLn;
-            char path[256];
-            this->appTitle = text;
-            if (this->appTitle != ""){
-                this->title(this->appTitle);
-            }
-            GetCurrentDirectory(sizeof(path), path);
-            this->pwdPath = path;
-            GetModuleFileName(NULL, path, sizeof(path));
-            this->appPath = path;
-            str pathData(path);
-            this->appPathNoEX = pathData.replace_all(".exe", "");
-        }
-
-        std::string title(std::string stringText = ""){
-            if (stringText != ""){
-                this->appTitle = stringText;
-                cmd("title " + this->appTitle);
-            }
-            return this->appTitle;
-        }
-        
-        std::string print(std::string stringText, std::string stringEnd = "\n") {
-            std::cout << stringText << stringEnd << std::flush;
-            return stringText;
-        }
-        std::string input(std::string stringPrompt = "") {
-            std::string inputText;
-            if (stringPrompt != ""){
-                std::cout << stringPrompt << std::endl; // 「std::endl」 \n とバッファをフラッシュ
-            }
-            std::getline(std::cin, inputText);
-            return inputText;
-        }
-        std::string cmd(std::string stringCmd) {
-            system(stringCmd.c_str());
-            return stringCmd;
-        }
-        int create_process_cmd(std::string stringCmd){
-            std::string cmdLog = "";
-            cmdLog = stringCmd;
-            STARTUPINFO si;
-            PROCESS_INFORMATION pi;
-            ZeroMemory( &si, sizeof(si) );
-            si.cb = sizeof(si);
-            ZeroMemory( &pi, sizeof(pi) );
-            // Start the child process. 
-            CreateProcess( 
-                NULL,   // No module name (use command line)
-                TEXT((char*)cmdLog.c_str()),        // Command line
-                NULL,           // Process handle not inheritable
-                NULL,           // Thread handle not inheritable
-                FALSE,          // Set handle inheritance to FALSE
-                0,              // No creation flags
-                NULL,           // Use parent's environment block
-                NULL,           // Use parent's starting directory 
-                &si,            // Pointer to STARTUPINFO structure
-                &pi            // Pointer to PROCESS_INFORMATION structure
-            );
-
-            Sleep(100); //起動出来るまで待つ
-        
-            // Close process and thread handles. 
-            CloseHandle( pi.hProcess );
-            CloseHandle( pi.hThread );
-
-            return 0;
-        }
-
-        // プロセスハンドルから特権名を有効/無効
-        BOOL ProcessPrivilegeName( HANDLE hProcess, LPCTSTR lpPrivilegeName, BOOL bEnable ){
-            BOOL                bSuccess = FALSE; // 戻り値(成功/失敗)
-            HANDLE              hToken;     // アクセストークンのハンドル
-            LUID                Luid;       // LUID(ローカル・ユニークID)
-            DWORD               dwSize;     // 特権トークン容量(変更前の特権)
-            TOKEN_PRIVILEGES    OldPriv;    // 特権トークン情報(変更前の特権)
-            TOKEN_PRIVILEGES    NewPriv;    // 特権トークン情報(新しい特権)
-
-            // アクセストークンのハンドルを取得
-            if ( OpenProcessToken(hProcess,OPEN_PROCESS_TOKEN,&hToken) ){
-                if ( LookupPrivilegeValue(NULL,lpPrivilegeName,&Luid) ){    // 特権名のLUIDを取得
-                    NewPriv.PrivilegeCount              = 1;                // 特権数
-                    NewPriv.Privileges[0].Luid          = Luid;             // 識別子
-                    NewPriv.Privileges[0].Attributes    = bEnable ? SE_PRIVILEGE_ENABLED : 0;
-
-                    // 特権トークン状態の有効/無効
-                    if ( AdjustTokenPrivileges(hToken,FALSE,&NewPriv,sizeof(TOKEN_PRIVILEGES),&OldPriv,&dwSize) ){
-                        if ( GetLastError() == ERROR_SUCCESS ){
-                            bSuccess = TRUE;
-                        }
-                    }
-                }
-                CloseHandle( hToken );
-            }
-            return bSuccess;
-        }
-        int shutdown(std::string op,int second){
-            int uFlag;
-            if (op == "logoff"){
-                uFlag = EWX_LOGOFF;
-            }
-            else if(op == "shutdown"){
-                uFlag = EWX_SHUTDOWN;
-            }
-            else if(op == "reboot"){
-                uFlag = EWX_REBOOT;
-            }
-            Sleep(second * 1000);
-
-            // ログオフ/シャットダウン/再起動を実行する
-            this->ProcessPrivilegeName( GetCurrentProcess(), SE_SHUTDOWN_NAME, TRUE );
-            ExitWindowsEx( uFlag, 0 );
-            return 0;
-        }
-
-        std::string path(int mode) {
-            switch(mode){
-                case 1:
-                    return this->appPathNoEX;
-                default:
-                    return this->appPath;
-            }
-        }
-        std::string pwd() {
-            return this->pwdPath;
-        }
-        int MsgBox(
-            std::string msgBoxTitle = "タイトル",
-            std::string msgBoxText = "テキスト",
-            int button = 0,
-            int icon = 0,
-            int help = 0
-        ){
-            int ans;
-            int val1 = 0, val2 =  0, val3 = 0, forms = 0;
-            switch(button){
-                case 1:
-                    val1 = MB_OKCANCEL;
-                    break;
-                case 2:
-                    val1 = MB_ABORTRETRYIGNORE;
-                    break;
-                case 3:
-                    val1 = MB_YESNOCANCEL;
-                    break;
-                case 4:
-                    val1 = MB_YESNO;        
-                    break;
-                case 5:
-                    val1 = MB_RETRYCANCEL;
-                    break;
-                default:
-                    val1 = MB_OK;
-                    break;
-            }
-            switch(icon){
-                case 1:
-                case MB_ICONWARNING:
-                    val2 = MB_ICONWARNING;
-                    break;
-                case 2:
-                case MB_ICONINFORMATION:
-                    val2 = MB_ICONINFORMATION;
-                    break;
-                case 3:
-                case MB_ICONQUESTION:
-                    val2 = MB_ICONQUESTION;
-                    break;
-                case 4:
-                case MB_ICONERROR:
-                    val2 = MB_ICONERROR;
-                    break;
-                default:
-                    break;
-            }
-            switch(help){
-                case 1:
-                case MB_HELP:
-                    val3 = MB_HELP;
-                    break;
-                default:
-                    break;
-            }
-            forms = val1 | val2 | val3;
-            ans = MessageBox(NULL , msgBoxText.c_str(), msgBoxTitle.c_str(), forms );
-            return ans;
-        }
-        std::string read_file(std::string filePath){
-            std::ifstream ifs(filePath);
-            std::string fileData = "";
-            std::string str;
-            if (ifs.fail()) {
-                return "FALSE";
-            }
-            while (std::getline(ifs, str)) {
-                fileData = fileData + str + "\n";
-            }
-            return fileData;
-        }
-        
-        int write_file(std::string filePath, std::string data, std::string mode = "a"){
-            if (mode == "a"){
-                if (filePath == this->appPathNoEX + ".cpp" || filePath == this->appPath){
-                    int ans;
-                    ans = this->MsgBox("警告", "このプログラムの重要ファイルです。\n書き換えますか？", 4, 1, 0);
-                    if (ans == IDNO){
-                        this->print("アクセス拒否されました。");
-                        return 2;
-                    }
-                }
-                std::string sdata = read_file(filePath); //データ読み込み
-                std::ofstream ofs(filePath); //空ファイルにする
-                if (ofs.fail()){
-                    this->print("FALSE");
-                    return -1;
-                }
-                ofs << sdata << data << std::endl;
-                this->print(filePath + "に追加書き込み完了しました。");
-                return 0;
-            }
-            else if (mode == "w"){
-                if (filePath == this->appPathNoEX + ".cpp" || filePath == this->appPath){
-                    int ans;
-                    ans = this->MsgBox("警告", "このプログラムの重要ファイルです。\nエディタで書き換えてください！！", 0, 4, 0);
-                    this->print("アクセス拒否されました。");
-                    return -1;
-                }
-                std::ofstream ofs(filePath); //空ファイルにする
-                if (ofs.fail()){
-                    this->print("FALSE");
-                    this->print("書き込み失敗");
-                    return -1;
-                }
-                ofs << data << std::endl;
-                this->print(filePath + "に書き込み完了しました。");
-                return 0;
-            }
-            else{
-                this->print("モードが違います。");
-                return -1;
-            }
-        }
-        std::vector<int> get_now_time() {
-            time_t t = time(nullptr);
-            struct tm* nowTime = localtime(&t);
-            std::vector<int> value = {
-                nowTime->tm_year + 1900,
-                nowTime->tm_mon + 1,
-                nowTime->tm_mday,
-                nowTime->tm_hour,
-                nowTime->tm_min,
-                nowTime->tm_sec
-            };
-            return value;
-        }
-        int random_num() {
-            std::random_device rnd;
-            return rnd();
-        }
-};
-
 
 
 
