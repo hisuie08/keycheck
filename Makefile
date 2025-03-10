@@ -6,7 +6,6 @@ CFLAGS			:= -pthread
 WINFLAGS		:= -lwsock32 -lgdi32 -lmingw32
 NOCONSOLEFLAG	:= -mwindows
 OSENV			:=
-ENDFLAG			:= 0
 
 ifeq ($(OS),Windows_NT)
 	OSENV := Windows
