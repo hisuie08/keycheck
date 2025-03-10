@@ -21,16 +21,15 @@ else
 	endif
 endif
 
+all: compile
 compile:
 	$(CC) -g $(SRCS) $(CFLAGS) -o $(TARGET)
 	@echo compiled
-
 
 # $@ : 現在のターゲット
 # $^ : すべての依存ファイルのリスト
 # -c : オブジェクトファイルを生成
 
-all: compile
 
 cleanup:
 ifeq ($(OSENV), Linux)
