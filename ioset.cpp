@@ -33,14 +33,16 @@
     #include <arpa/inet.h>
     #include <sys/socket.h>
     #include <unistd.h>
-    #define BUFSIZE 1024
-    #define MAXPENDING 5 // 最大接続台数
     
     class TCP{
         protected:
             int sock;
+            int bufsize;
+            int maxpending; // 最大接続台数
         public:
-            TCP(){
+            TCP(int bufsize = 1024, int maxpending = 5){
+                this->maxpending = maxpending;
+                this->bufsize = bufsize;
                 this->sock = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP); /* ソケットを作成 (TCP) */
                 if (this->sock < 0) { 
                     perror("socket() failed");
@@ -83,7 +85,7 @@
             }
             
             int port_listen(){
-                if (listen(this->sock, MAXPENDING) < 0) {
+                if (listen(this->sock, this->maxpending) < 0) {
                     perror("listen() failed");
                     return 1;
                 }
@@ -103,7 +105,7 @@
             
             int port_recv(int csock, char* buff){ /* 受信する */
                 int bytes;
-                bytes = recv(csock, buff, BUFSIZE - 1, 0);
+                bytes = recv(csock, buff, this->bufsize - 1, 0);
                 if (bytes < 0) { // 空文字をエラーにしない
                     perror("recv() failed");
                     return 1;
@@ -116,8 +118,10 @@
     class UDP{
         protected:
             int sock;
+            int bufsize;
         public:
-            UDP(){
+            UDP(int bufsize = 1024){
+                this->bufsize = bufsize;
                 this->sock = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP); /* ソケットを作成する (UDP)*/
                 if (this->sock < 0) { 
                     perror("socket() failed");
@@ -156,7 +160,7 @@
                 int bytes;
                 unsigned int csize = sizeof(*caddr);
             
-                bytes = recvfrom (this->sock, buff, BUFSIZE - 1, 0, (struct sockaddr *)caddr, &csize);
+                bytes = recvfrom (this->sock, buff, this->bufsize - 1, 0, (struct sockaddr *)caddr, &csize);
                 if ((bytes) < 0) { // 空文字をエラーにしない
                     perror("recvfrom() failed");
                     return 1;
@@ -175,15 +179,17 @@
     //#include <shellapi.h>
     #pragma comment(lib, "ws2_32.lib")
     #pragma warning(disable:4996)
-    #define BUFSIZE 1024
-    #define MAXPENDING 5 // 最大接続台数
 
     class TCP{
         protected:
             WSADATA wsaData;
             int sock;
+            int bufsize;
+            int maxpending; // 最大接続台数
         public:
-            TCP(){
+            TCP(int bufsize = 1024, int maxpending = 5){
+                this->bufsize = bufsize;
+                this->maxpending = maxpending;
                 WSAStartup(MAKEWORD(2, 0), &this->wsaData);   //MAKEWORD(2, 0) : winsock ver. 2.0
                 this->sock = socket(AF_INET, SOCK_STREAM, 0);  //AF_INET : IPv4、SOCK_DGRAM : UDP SOCK_STREAM : TCP
                 if (this->sock < 0) { 
@@ -228,7 +234,7 @@
             }
 
             int port_listen(){
-                if (listen(this->sock, MAXPENDING) < 0) {
+                if (listen(this->sock, this->maxpending) < 0) {
                     perror("listen() failed");
                     return 1;
                 }
@@ -248,7 +254,7 @@
 
             int port_recv(int csock, char* buff){ /* 受信する */
                 int bytes;
-                bytes = recv(csock, buff, BUFSIZE - 1, 0);
+                bytes = recv(csock, buff, this->bufsize - 1, 0);
                 if (bytes < 0) { // 空文字をエラーにしない
                     perror("recv() failed");
                     return 1;
@@ -263,8 +269,10 @@
         protected:
             WSADATA wsaData;
             int sock;
+            int bufsize;
         public:
-            UDP(){
+            UDP(int bufsize = 1024){
+                this->bufsize = bufsize;
                 WSAStartup(MAKEWORD(2, 0), &this->wsaData);   //MAKEWORD(2, 0) : winsock ver. 2.0
                 this->sock = socket(AF_INET, SOCK_DGRAM, 0);  //AF_INET : IPv4、SOCK_DGRAM : UDP SOCK_STREAM : TCP
                 if (this->sock < 0) { 
@@ -305,7 +313,7 @@
                 int bytes;
                 int csize = sizeof(*caddr);
             
-                bytes = recvfrom (this->sock, buff, BUFSIZE - 1, 0, (struct sockaddr *)caddr, &csize);
+                bytes = recvfrom (this->sock, buff, this->bufsize - 1, 0, (struct sockaddr *)caddr, &csize);
                 if ((bytes) < 0) { // 空文字をエラーにしない
                     perror("recvfrom() failed");
                     return 1;
