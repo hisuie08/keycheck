@@ -1,5 +1,3 @@
-#include "ioset.hpp"
-
 class KeyCheck : public IOSet{
     protected:
         std::unordered_map <int, std::string> keyList{ //連想配列を使える
