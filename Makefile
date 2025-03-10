@@ -1,42 +1,46 @@
-CC     = g++
-CFLAGS = -pthread -lwsock32 -mwindows -lgdi32 -lmingw32
-TARGET = keycheck.exe
-SRCS   = keycheck.cpp
+TARGET			:= $(firstword $(MAKECMDGOALS))
+ARG1			:= $(word 2, $(MAKECMDGOALS))
+ARG2			:= $(word 3, $(MAKECMDGOALS))
 
-#OBJS   = $(SRCS:.cpp=.o)
-INCDIR = 
-LIBDIR = 
-LIBS   = 
-
-OSENV =
+CFLAGS			:= -pthread
+WINFLAGS		:= -lwsock32 -lgdi32 -lmingw32
+NOCONSOLEFLAG	:= -mwindows
+OSENV			:=
+ENDFLAG			:= 0
 
 ifeq ($(OS),Windows_NT)
-	OSENV = Windows
+	OSENV := Windows
 else
 	UNAME_OS := $(shell uname -s)
 	ifeq ($(UNAME_OS),Linux)
-		OSENV = Linux
+		OSENV := Linux
 	else
-		OSENV = Unknown
+		OSENV := Unknown
 	endif
 endif
 
-all: compile
-compile:
-	$(CC) -g $(SRCS) $(CFLAGS) -o $(TARGET)
-	@echo compiled
-
-# $@ : 現在のターゲット
-# $^ : すべての依存ファイルのリスト
-# -c : オブジェクトファイルを生成
-
-
-cleanup:
-ifeq ($(OSENV), Linux)
-	@rm -f $(TARGET) *.d
-else ifeq ($(OSENV), Windows)
-	@del $(TARGET) *.d
-else
-	@echo Unknown OS
+run:
+ifeq ($(ARG1),)
+	@python
+else ifeq ($(findstring .py, $(ARG1)), .py)
+	python $(ARG1)
+else ifeq ($(findstring .cpp, $(ARG1)), .cpp)
+    ifeq ($(OSENV), Windows)
+		$(eval CFLAGS := $(CFLAGS) $(WINFLAGS))
+    endif
+    ifneq ($(ARG2), )
+		$(eval CFLAGS := $(CFLAGS) $(NOCONSOLEFLAG))
+    endif
+	g++ -g $(ARG1) $(CFLAGS) -o $(ARG1:.cpp=.exe)
+    
+else ifeq ($(findstring .c, $(ARG1)), .c)
+    ifeq ($(OSENV), Windows)
+		$(eval CFLAGS := $(CFLAGS) $(WINFLAGS))
+    endif
+    ifneq ($(ARG2), )
+		$(eval CFLAGS := $(CFLAGS) $(NOCONSOLEFLAG))
+    endif
+	gcc -g $(ARG1) $(CFLAGS) -o $(ARG1:.c=.exe)
 endif
-	@echo completed
+	@echo ERROR No.1 : Processing Complete
+	@exit /b 1
