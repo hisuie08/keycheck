@@ -5,8 +5,15 @@
 動作確認環境 : **Windows11**
 ## 起動方法
 ### コンパイル
+<<<<<<< HEAD
 MinGW : `g++ -g keycheck.cpp -pthread -mwindows -o keycheck.exe`  
 GNUMake：`make`
+=======
+- Install : `GCC`
+```bash
+$ build.bat
+```
+>>>>>>> b05b0ab20481e35d804db7c14d752a0ec5f8c713
 
 ## 特殊キーについて
 |       特殊キー      |        キー名       |

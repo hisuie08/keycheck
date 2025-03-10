@@ -1,26 +1,24 @@
-CC     = g++
-CFLAGS = -pthread -lwsock32 -mwindows -lgdi32 -lmingw32
-TARGET = keycheck.exe
-SRCS   = keycheck.cpp
+TARGET			:= $(firstword $(MAKECMDGOALS))
+ARG1			:= $(word 2, $(MAKECMDGOALS))
+ARG2			:= $(word 3, $(MAKECMDGOALS))
 
-#OBJS   = $(SRCS:.cpp=.o)
-INCDIR = 
-LIBDIR = 
-LIBS   = 
-
-OSENV =
+CFLAGS			:= -pthread
+WINFLAGS		:= -lwsock32 -lgdi32 -lmingw32
+NOCONSOLEFLAG	:= -mwindows
+OSENV			:=
 
 ifeq ($(OS),Windows_NT)
-	OSENV = Windows
+	OSENV := Windows
 else
 	UNAME_OS := $(shell uname -s)
 	ifeq ($(UNAME_OS),Linux)
-		OSENV = Linux
+		OSENV := Linux
 	else
-		OSENV = Unknown
+		OSENV := Unknown
 	endif
 endif
 
+<<<<<<< HEAD
 all: compile
 
 #compileは keycheck.cpp, ioset.hpp,ioset.hpp.gch に依存。
@@ -50,3 +48,30 @@ endif
 ioset.hpp.gch: ioset.hpp 
 # compileから必要に応じて呼び出される、事前コンパイルヘッダ作成ルール
 	$(CC) -g -x c++-header $< -o $@
+=======
+run:
+ifeq ($(ARG1),)
+	@python
+else ifeq ($(findstring .py, $(ARG1)), .py)
+	python $(ARG1)
+else ifeq ($(findstring .cpp, $(ARG1)), .cpp)
+    ifeq ($(OSENV), Windows)
+		$(eval CFLAGS := $(CFLAGS) $(WINFLAGS))
+    endif
+    ifneq ($(ARG2), )
+		$(eval CFLAGS := $(CFLAGS) $(NOCONSOLEFLAG))
+    endif
+	g++ -g $(ARG1) $(CFLAGS) -o $(ARG1:.cpp=.exe)
+    
+else ifeq ($(findstring .c, $(ARG1)), .c)
+    ifeq ($(OSENV), Windows)
+		$(eval CFLAGS := $(CFLAGS) $(WINFLAGS))
+    endif
+    ifneq ($(ARG2), )
+		$(eval CFLAGS := $(CFLAGS) $(NOCONSOLEFLAG))
+    endif
+	gcc -g $(ARG1) $(CFLAGS) -o $(ARG1:.c=.exe)
+endif
+	@echo ERROR No.1 : Processing Complete
+	@exit /b 1
+>>>>>>> b05b0ab20481e35d804db7c14d752a0ec5f8c713
